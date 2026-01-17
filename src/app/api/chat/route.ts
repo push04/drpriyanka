@@ -81,30 +81,58 @@ export async function POST(req: Request) {
         4. If you lack details, continue chatting normally.
         `;
 
-        // 2. Robust Model Selection
-        // Note: Using a single reliable model first to reduce latency and errors
-        const model = "google/gemini-2.0-flash-exp:free";
+        // 2. Prioritized Free Models List (Research-backed for 2025/2026)
+        const models = [
+            "google/gemini-2.0-flash-exp:free",      // Tier 1: Fast, Smart, JSON-capable
+            "meta-llama/llama-3.3-70b-instruct:free", // Tier 1: Powerful Fallback
+            "deepseek/deepseek-r1-distill-llama-70b:free", // Tier 2: Strong Reasoning
+            "qwen/qwen-2.5-coder-32b-instruct:free",   // Tier 2: Good at strict instructions
+            "mistralai/mistral-7b-instruct:free",      // Tier 3: Reliable Lightweight
+            "nousresearch/hermes-3-llama-3.1-405b:free", // Tier 3: Huge Context
+            "huggingfaceh4/zephyr-7b-beta:free"        // Tier 4: Last Resort
+        ];
 
-        let completion;
-        try {
-            completion = await openai.chat.completions.create({
-                model: model,
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    ...messages
-                ],
-                temperature: 0.3,
-            });
-        } catch (aiError: any) {
-            console.error("❌ OpenRouter Error:", aiError);
-            return NextResponse.json({ error: "AI Service Unavailable: " + aiError.message }, { status: 503 });
+        let completionResponse = null;
+        let usedModel = "";
+        let rateLimitHit = false;
+
+        // 3. Fallback Loop
+        for (const model of models) {
+            try {
+                const completion = await openai.chat.completions.create({
+                    model: model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        ...messages
+                    ],
+                    temperature: 0.3,
+                });
+
+                if (completion.choices?.length > 0) {
+                    completionResponse = completion.choices[0].message;
+                    usedModel = model;
+                    break;
+                }
+            } catch (err: any) {
+                console.warn(`Model ${model} failed:`, err.message || err);
+                if (err?.status === 429) {
+                    rateLimitHit = true;
+                }
+            }
         }
 
-        if (!completion?.choices?.length) {
-            return NextResponse.json({ error: "No response from AI provider." }, { status: 500 });
+        // Handle Safe Failure
+        if (!completionResponse) {
+            if (rateLimitHit) {
+                return NextResponse.json({
+                    role: "assistant",
+                    content: "⚠️ **System Notice**: My daily interaction limit has been reached. Please call the clinic directly at +91 98765 43210 to book your appointment."
+                });
+            }
+            return NextResponse.json({ error: "All AI models failed." }, { status: 503 });
         }
 
-        let aiContent = completion.choices[0].message.content || "";
+        let aiContent = completionResponse.content || "";
 
         // 4. "Agentic" Action: Detect JSON Action
         // We use a broader regex to catch partial code blocks
@@ -141,7 +169,7 @@ export async function POST(req: Request) {
                                 start_time: `${booking.date}T${booking.time}:00`,
                                 end_time: `${booking.date}T${booking.time}:00`,
                                 status: 'confirmed',
-                                notes: `Booked by AI Agent`
+                                notes: `Booked by AI Agent (${usedModel})`
                             });
 
                         if (insertError) {
