@@ -81,15 +81,14 @@ export async function POST(req: Request) {
         4. If you lack details, continue chatting normally.
         `;
 
-        // 2. Prioritized Free Models List (Research-backed for 2025/2026)
+        // 2. Prioritized Free Models (Based on User Research - Agentic & High Performance)
         const models = [
-            "google/gemini-2.0-flash-exp:free",      // Tier 1: Fast, Smart, JSON-capable
-            "meta-llama/llama-3.3-70b-instruct:free", // Tier 1: Powerful Fallback
-            "deepseek/deepseek-r1-distill-llama-70b:free", // Tier 2: Strong Reasoning
-            "qwen/qwen-2.5-coder-32b-instruct:free",   // Tier 2: Good at strict instructions
-            "mistralai/mistral-7b-instruct:free",      // Tier 3: Reliable Lightweight
-            "nousresearch/hermes-3-llama-3.1-405b:free", // Tier 3: Huge Context
-            "huggingfaceh4/zephyr-7b-beta:free"        // Tier 4: Last Resort
+            "xiaomi/mimo-v2-flash",                   // Tier 1: Top #1 Open Source, Agentic support
+            "deepseek/deepseek-r1-0528",              // Tier 1: O1-level performance
+            "google/gemma-3-27b-it",                  // Tier 2: Strong structured output (Instruction Tuned)
+            "meta-llama/llama-3.3-70b-instruct:free", // Tier 2: Reliable fallback
+            "mistralai/devstral-2-2512",              // Tier 3: Agentic Coding specialist
+            "qwen/qwen-3-coder-480b-a35b-instruct"    // Tier 3: Massive MoE
         ];
 
         let completionResponse = null;
