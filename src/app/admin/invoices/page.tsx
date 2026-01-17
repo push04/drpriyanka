@@ -1,26 +1,55 @@
 "use client";
 
-import { useState } from "react";
-import { Download, FileText, Search, MoreVertical, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, FileText, Search, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-// Mock Invoice Data
-const initialInvoices = [
-    { id: "INV-001", patient: "Rahul Sharma", date: "2024-03-20", amount: 1500, status: "Paid", service: "Therapeutic Yoga" },
-    { id: "INV-002", patient: "Anjali Gupta", date: "2024-03-19", amount: 2000, status: "Paid", service: "Hydrotherapy" },
-    { id: "INV-003", patient: "Vikram Singh", date: "2024-03-18", amount: 1200, status: "Pending", service: "Massage" },
-    { id: "INV-004", patient: "Sneha Patel", date: "2024-03-15", amount: 1000, status: "Overdue", service: "Consultation" },
-];
+import { supabase } from "@/lib/supabase";
 
 export default function InvoicesPage() {
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [stats, setStats] = useState({ revenue: 0, pending: 0, count: 0 });
 
-    const filteredInvoices = initialInvoices.filter(inv =>
-        inv.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.id.toLowerCase().includes(searchTerm.toLowerCase())
+    useEffect(() => {
+        fetchInvoices();
+    }, []);
+
+    const fetchInvoices = async () => {
+        setIsLoading(true);
+        const { data, error } = await supabase
+            .from('invoices')
+            .select('*')
+            .order('issued_date', { ascending: false });
+
+        if (data) {
+            setInvoices(data);
+
+            // Calculate Stats
+            const revenue = data.filter(i => i.status === 'paid').reduce((sum, i) => sum + Number(i.amount), 0);
+            const pending = data.filter(i => i.status === 'pending').reduce((sum, i) => sum + Number(i.amount), 0);
+            setStats({ revenue, pending, count: data.length });
+        }
+        setIsLoading(false);
+    };
+
+    // Helper to Create a Demo Invoice (Since we don't have a full UI for it yet)
+    const createDemoInvoice = async () => {
+        const { error } = await supabase.from('invoices').insert({
+            patient_name: "Fresh Demo Patient",
+            service_name: "General Checkup",
+            amount: 1500,
+            status: "pending",
+            issued_date: new Date().toISOString().split('T')[0]
+        });
+        if (!error) fetchInvoices();
+    };
+
+    const filteredInvoices = invoices.filter(inv =>
+        inv.patient_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -30,28 +59,29 @@ export default function InvoicesPage() {
                     <h2 className="text-3xl font-serif font-bold text-[#2d5016]">Invoices & Payments</h2>
                     <p className="text-muted-foreground">Track revenue and patient payments.</p>
                 </div>
-                <Button className="bg-[#2d5016] text-white hover:bg-[#2d5016]/90">
-                    <Plus className="w-4 h-4 mr-2" /> Create Invoice
+                {/* Temporary 'Quick Add' for testing until full form is built */}
+                <Button onClick={createDemoInvoice} className="bg-[#2d5016] text-white hover:bg-[#2d5016]/90">
+                    <Plus className="w-4 h-4 mr-2" /> Quick Create Demo Invoice
                 </Button>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
                 <Card className="bg-green-50 border-green-100">
                     <CardContent className="p-6">
-                        <div className="text-sm font-medium text-green-600 mb-2">Total Revenue (This Month)</div>
-                        <div className="text-3xl font-bold text-green-800">₹45,200</div>
+                        <div className="text-sm font-medium text-green-600 mb-2">Total Revenue</div>
+                        <div className="text-3xl font-bold text-green-800">₹{stats.revenue.toLocaleString()}</div>
                     </CardContent>
                 </Card>
                 <Card className="bg-orange-50 border-orange-100">
                     <CardContent className="p-6">
                         <div className="text-sm font-medium text-orange-600 mb-2">Pending Payments</div>
-                        <div className="text-3xl font-bold text-orange-800">₹8,500</div>
+                        <div className="text-3xl font-bold text-orange-800">₹{stats.pending.toLocaleString()}</div>
                     </CardContent>
                 </Card>
                 <Card className="bg-blue-50 border-blue-100">
                     <CardContent className="p-6">
                         <div className="text-sm font-medium text-blue-600 mb-2">Invoices Generated</div>
-                        <div className="text-3xl font-bold text-blue-800">124</div>
+                        <div className="text-3xl font-bold text-blue-800">{stats.count}</div>
                     </CardContent>
                 </Card>
             </div>
@@ -71,49 +101,54 @@ export default function InvoicesPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="rounded-md border-t-0">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-muted/10 text-muted-foreground font-medium border-b">
-                                <tr>
-                                    <th className="px-6 py-4">Invoice ID</th>
-                                    <th className="px-6 py-4">Patient</th>
-                                    <th className="px-6 py-4">Service</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Amount</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {filteredInvoices.map((inv) => (
-                                    <tr key={inv.id} className="hover:bg-muted/5 transition-colors">
-                                        <td className="px-6 py-4 font-medium font-mono">{inv.id}</td>
-                                        <td className="px-6 py-4">{inv.patient}</td>
-                                        <td className="px-6 py-4 text-muted-foreground">{inv.service}</td>
-                                        <td className="px-6 py-4">{inv.date}</td>
-                                        <td className="px-6 py-4 font-bold">₹{inv.amount}</td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant="outline" className={`
-                                                ${inv.status === 'Paid' ? 'border-green-200 bg-green-50 text-green-700' :
-                                                    inv.status === 'Pending' ? 'border-orange-200 bg-orange-50 text-orange-700' :
-                                                        'border-red-200 bg-red-50 text-red-700'}
-                                            `}>
-                                                {inv.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                                    <Download className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </td>
+                        {isLoading ? (
+                            <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+                        ) : (
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-muted/10 text-muted-foreground font-medium border-b">
+                                    <tr>
+                                        <th className="px-6 py-4">Patient</th>
+                                        <th className="px-6 py-4">Service</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4">Amount</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {filteredInvoices.length === 0 ? (
+                                        <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No invoices found.</td></tr>
+                                    ) : filteredInvoices.map((inv) => (
+                                        <tr key={inv.id} className="hover:bg-muted/5 transition-colors">
+                                            <td className="px-6 py-4 font-medium">{inv.patient_name}</td>
+                                            <td className="px-6 py-4 text-muted-foreground">{inv.service_name}</td>
+                                            <td className="px-6 py-4">{inv.issued_date}</td>
+                                            <td className="px-6 py-4 font-bold">₹{inv.amount}</td>
+                                            <td className="px-6 py-4">
+                                                <Badge variant="outline" className={`
+                                                capitalize
+                                                ${inv.status === 'paid' ? 'border-green-200 bg-green-50 text-green-700' :
+                                                        inv.status === 'pending' ? 'border-orange-200 bg-orange-50 text-orange-700' :
+                                                            'border-red-200 bg-red-50 text-red-700'}
+                                            `}>
+                                                    {inv.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                                        <Download className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                                        <FileText className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </CardContent>
             </Card>
