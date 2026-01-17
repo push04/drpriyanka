@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
                 .limit(5);
 
             // Fetch service names for recent appointments
-            let formattedRecent = [];
+            let formattedRecent: any[] = [];
             if (recentData) {
                 // Fetch service details for these appointments
                 const serviceIds = recentData.map(a => a.service_id);
