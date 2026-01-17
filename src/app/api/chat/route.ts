@@ -2,22 +2,29 @@ import { OpenAI } from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize Supabase Admin Client for "Agentic" database writes
-// We use the SERVICE_ROLE_KEY to bypass RLS for guest bookings
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Initialize Supabase Admin Client safely
+// If keys are missing, we log a warning but DO NOT crash the standard chat.
+let supabaseAdmin: any = null;
+try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
-    ? createClient(supabaseUrl, supabaseServiceKey)
-    : null;
+    if (supabaseUrl && supabaseServiceKey) {
+        supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    } else {
+        console.warn("⚠️ AI Agent: Missing Supabase Service Key. Booking capabilities will be disabled.");
+    }
+} catch (configError) {
+    console.error("⚠️ AI Agent: Failed to initialize Supabase Admin:", configError);
+}
 
 export async function POST(req: Request) {
     try {
         const apiKey = process.env.OPENROUTER_API_KEY;
 
         if (!apiKey) {
-            console.error("OpenRouter API Key is missing");
-            return NextResponse.json({ error: "OpenRouter API Key missing" }, { status: 500 });
+            console.error("❌ OpenRouter API Key is missing");
+            return NextResponse.json({ error: "Configuration Error: OpenRouter API Key missing." }, { status: 500 });
         }
 
         const openai = new OpenAI({
@@ -29,9 +36,14 @@ export async function POST(req: Request) {
             },
         });
 
-        const { messages } = await req.json();
+        const body = await req.json();
+        const { messages } = body;
 
-        // 1. Enhanced System Prompt for "Agentic" Behavior
+        if (!messages) {
+            return NextResponse.json({ error: "Bad Request: No messages provided." }, { status: 400 });
+        }
+
+        // 1. Enhanced System Prompt
         const systemPrompt = `You are Dr. Priyanka's Intelligent Receptionist.
         Your Goal: Help patients understand services and BOOK APPOINTMENTS autonomously.
 
@@ -51,117 +63,108 @@ export async function POST(req: Request) {
            - Preferred Time (e.g., 10:00 AM)
            - Phone Number
 
-        3. **CRITICAL**: Once you have ALL 5 details, DO NOT ask for confirmation. Instead, output a JSON block strictly in this format to execute the booking:
+        3. **CRITICAL**: Once you have ALL 5 details, output a JSON block strictly in this format:
            
            \`\`\`json
            {
              "action": "BOOK_APPOINTMENT",
              "data": {
-               "patient_name": "John Doe",
-               "service_name": "Therapeutic Yoga",
+               "patient_name": "NAME",
+               "service_name": "SERVICE",
                "date": "YYYY-MM-DD",
                "time": "HH:MM",
-               "phone": "1234567890"
+               "phone": "PHONE"
              }
            }
            \`\`\`
            
-           (Output ONLY the JSON block when booking is ready. Do not add extra text outside the block).
-
-        4. If you lack details, continue chatting normally. Never output mock JSON until you have real user data.
+        4. If you lack details, continue chatting normally.
         `;
 
-        // 2. Prioritized Free Models Structure
-        const models = [
-            "google/gemini-2.0-flash-exp:free",      // Best at JSON instruction following
-            "meta-llama/llama-3.3-70b-instruct:free", // Strong fallback
-            "mistralai/mistral-small-24b-instruct-2501:free"
-        ];
+        // 2. Robust Model Selection
+        // Note: Using a single reliable model first to reduce latency and errors
+        const model = "google/gemini-2.0-flash-exp:free";
 
-        let completionResponse = null;
-        let usedModel = "";
-
-        // 3. Fallback Loop
-        for (const model of models) {
-            try {
-                const completion = await openai.chat.completions.create({
-                    model: model,
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        ...messages
-                    ],
-                    temperature: 0.3, // Lower temp for precise JSON
-                });
-
-                if (completion.choices?.length > 0) {
-                    completionResponse = completion.choices[0].message;
-                    usedModel = model;
-                    break;
-                }
-            } catch (err) {
-                console.warn(`Model ${model} failed`, err);
-            }
+        let completion;
+        try {
+            completion = await openai.chat.completions.create({
+                model: model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messages
+                ],
+                temperature: 0.3,
+            });
+        } catch (aiError: any) {
+            console.error("❌ OpenRouter Error:", aiError);
+            return NextResponse.json({ error: "AI Service Unavailable: " + aiError.message }, { status: 503 });
         }
 
-        if (!completionResponse) {
-            return NextResponse.json({ error: "All AI models failed." }, { status: 500 });
+        if (!completion?.choices?.length) {
+            return NextResponse.json({ error: "No response from AI provider." }, { status: 500 });
         }
 
-        let aiContent = completionResponse.content || "";
+        let aiContent = completion.choices[0].message.content || "";
 
         // 4. "Agentic" Action: Detect JSON Action
+        // We use a broader regex to catch partial code blocks
         const jsonMatch = aiContent.match(/```json\s*({[\s\S]*?})\s*```/);
 
         if (jsonMatch) {
-            try {
-                const actionBlock = JSON.parse(jsonMatch[1]);
+            console.log("🤖 AI Agent: Action Detected");
 
-                if (actionBlock.action === "BOOK_APPOINTMENT" && supabaseAdmin) {
-                    const booking = actionBlock.data;
-                    console.log("AI AGENT EXECUTING BOOKING:", booking);
+            // If Supabase is NOT configured, we cannot book.
+            if (!supabaseAdmin) {
+                console.error("❌ Agent Error: Cannot book. Supabase Admin client is null.");
+                aiContent = "I have all your details, but our booking system is currently undergoing maintenance. Please call the clinic directly to confirm this appointment.";
+            } else {
+                try {
+                    const actionBlock = JSON.parse(jsonMatch[1]);
 
-                    // Insert into DB
-                    // Note: We need a service_id. We'll try to find it or insert loosely.
-                    // Ideally fetch service ID first.
-                    const { data: serviceData } = await supabaseAdmin
-                        .from('services')
-                        .select('id')
-                        .ilike('name', `%${booking.service_name}%`)
-                        .single();
+                    if (actionBlock.action === "BOOK_APPOINTMENT") {
+                        const booking = actionBlock.data;
 
-                    const { error: insertError } = await supabaseAdmin
-                        .from('appointments')
-                        .insert({
-                            patient_name: booking.patient_name,
-                            patient_phone: booking.phone,
-                            service_id: serviceData?.id, // Might be null if fuzzy match fails, schema should handle or we update schema
-                            start_time: `${booking.date}T${booking.time}:00`, // Naive formatting
-                            end_time: `${booking.date}T${booking.time}:00`, // Placeholder duration
-                            status: 'confirmed', // Auto-confirm AI bookings for now
-                            notes: `Booked by AI Agent (${usedModel})`
-                        });
+                        // Find Service ID (Loose match)
+                        const { data: serviceData } = await supabaseAdmin
+                            .from('services')
+                            .select('id')
+                            .ilike('name', `%${booking.service_name}%`)
+                            .limit(1)
+                            .maybeSingle();
 
-                    if (insertError) {
-                        console.error("Agent DB Write Failed:", insertError);
-                        aiContent = `I attempted to book your appointment, but our system reported an internal error. Please call the clinic directly. (Error: ${insertError.message})`;
-                    } else {
-                        aiContent = `✅ **Appointment Confirmed!**\n\nI have successfully booked **${booking.service_name}** for **${booking.patient_name}** on **${booking.date} at ${booking.time}**.\n\nWe have sent a confirmation to **${booking.phone}**. Is there anything else I can help you with?`;
+                        const { error: insertError } = await supabaseAdmin
+                            .from('appointments')
+                            .insert({
+                                patient_name: booking.patient_name,
+                                patient_phone: booking.phone,
+                                service_id: serviceData?.id || null, // Allow null if service not found, fix manually later
+                                start_time: `${booking.date}T${booking.time}:00`,
+                                end_time: `${booking.date}T${booking.time}:00`,
+                                status: 'confirmed',
+                                notes: `Booked by AI Agent`
+                            });
+
+                        if (insertError) {
+                            console.error("❌ Agent DB Write Failed:", insertError);
+                            aiContent = `I attempted to book, but encountered an error. Please call us. (System Error: ${insertError.message})`;
+                        } else {
+                            aiContent = `✅ **Appointment Confirmed!**\n\nI have successfully booked **${booking.service_name}** for **${booking.patient_name}** on **${booking.date} at ${booking.time}**.\n\nConfirmation sent to **${booking.phone}**.`;
+                        }
                     }
+                } catch (e) {
+                    console.error("❌ Agent JSON Parse/Execute Error:", e);
+                    aiContent = "I encountered an error processing your booking request. Please check your details.";
                 }
-            } catch (e) {
-                console.error("Agent JSON Parse Error:", e);
-                // Fallback: Don't crash, just show the raw content or a generic message
-                aiContent = "I am processing your request but encountered a format error. Please verify your details.";
             }
         } else {
-            // Clean up any leaked markdown JSON tags if the regex failed but the AI tried
+            // Cleanup any stray backticks just in case
             aiContent = aiContent.replace(/```json/g, "").replace(/```/g, "");
         }
 
         return NextResponse.json({ role: "assistant", content: aiContent });
 
     } catch (error: any) {
-        console.error("AI Route Error:", error);
+        console.error("❌ General AI Route Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
