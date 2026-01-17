@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Check, X, Clock, MoreVertical, Search, Filter, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,8 +77,10 @@ export default function AppointmentsPage() {
                     <p className="text-muted-foreground">Manage your clinic's schedule.</p>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                    <Button className="bg-[#2d5016] text-white hover:bg-[#2d5016]/90">
-                        + New Booking
+                    <Button asChild className="bg-[#2d5016] text-white hover:bg-[#2d5016]/90">
+                        <Link href="/admin/appointments/new">
+                            + New Booking
+                        </Link>
                     </Button>
                 </div>
             </div>
