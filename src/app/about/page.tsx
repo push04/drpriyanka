@@ -11,7 +11,7 @@ export default function AboutPage() {
             <Navbar />
             <main className="flex-grow pt-20">
                 {/* Mission */}
-                <section className="py-20 container mx-auto px-4 md:px-6">
+                <section className="py-20 container mx-auto px-6 md:px-16 lg:px-32">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                             <Image

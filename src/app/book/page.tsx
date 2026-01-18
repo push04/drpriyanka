@@ -313,7 +313,7 @@ export default function BookingPage() {
     return (
         <div className="min-h-screen flex flex-col bg-muted/10">
             <Navbar />
-            <main className="flex-grow pt-28 pb-16 container mx-auto px-4">
+            <main className="flex-grow pt-28 pb-16 container mx-auto px-6 md:px-16 lg:px-32">
                 <h1 className="text-3xl md:text-4xl font-serif font-bold text-center mb-8">Book Your Appointment</h1>
                 <Suspense fallback={<div>Loading...</div>}>
                     <BookingForm />

@@ -39,7 +39,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 md:px-6 py-12 grid md:grid-cols-3 gap-12">
+                <div className="container mx-auto px-6 md:px-16 lg:px-32 py-12 grid md:grid-cols-3 gap-12">
                     <div className="md:col-span-2 space-y-8">
                         <h2 className="text-2xl font-serif font-bold text-primary">About this Therapy</h2>
                         <p className="text-lg text-muted-foreground leading-relaxed">
