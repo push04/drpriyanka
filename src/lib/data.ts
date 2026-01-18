@@ -79,6 +79,19 @@ export const testimonials = [
     }
 ];
 
+export const conditionsWeTreat = [
+    "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
+    "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
+    "General Ailments", "Acidity", "Weight Loss", "Obesity",
+    "Face Rejuvination", "General Health"
+];
+
+export const clinicContact = {
+    address: "SF-209, Siddharth Magnum Plus, Next to Bansal Mall, Tarsali-390009",
+    phones: ["+91 95862 39293", "+91 88664 55269"],
+    email: "clinic@drpriyanka.com"
+};
+
 export const navLinks = [
     { name: "Home", href: "/" },
     { name: "Services", href: "/services" },

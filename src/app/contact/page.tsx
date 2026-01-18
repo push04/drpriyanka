@@ -43,15 +43,16 @@ export default function ContactPage() {
                                     <div className="bg-primary/10 p-3 rounded-full"><MapPin className="text-primary" /></div>
                                     <div>
                                         <h3 className="font-semibold text-lg">Visit Us</h3>
-                                        <p className="text-muted-foreground">123 Wellness Ave, Alkapuri<br />Vadodara, Gujarat 390007</p>
+                                        <p className="text-muted-foreground">SF-209, Siddharth Magnum Plus,<br />Next to Bansal Mall, Tarsali-390009</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
                                     <div className="bg-primary/10 p-3 rounded-full"><Phone className="text-primary" /></div>
                                     <div>
                                         <h3 className="font-semibold text-lg">Call Us</h3>
-                                        <p className="text-muted-foreground">+91 98765 43210</p>
-                                        <p className="text-xs text-muted-foreground">Mon-Sat, 9am - 7pm</p>
+                                        <p className="text-muted-foreground">+91 95862 39293</p>
+                                        <p className="text-muted-foreground">+91 88664 55269</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Mon-Sat, 9am - 7pm</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">

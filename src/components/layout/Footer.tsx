@@ -53,11 +53,14 @@ export function Footer() {
                         <ul className="space-y-4 text-sm text-white/70">
                             <li className="flex items-start gap-3">
                                 <MapPin className="w-5 h-5 text-white/90 shrink-0" />
-                                <span>123 Wellness Ave, Alkapuri,<br />Vadodara, Gujarat 390007</span>
+                                <span>SF-209, Siddharth Magnum Plus,<br />Next to Bansal Mall, Tarsali-390009</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone className="w-5 h-5 text-white/90 shrink-0" />
-                                <span>+91 98765 43210</span>
+                                <div className="flex flex-col">
+                                    <span>+91 95862 39293</span>
+                                    <span>+91 88664 55269</span>
+                                </div>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail className="w-5 h-5 text-white/90 shrink-0" />
