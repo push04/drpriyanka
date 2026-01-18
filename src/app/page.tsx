@@ -68,7 +68,7 @@ export default function Home() {
             />
           </div>
 
-          <div className="container mx-auto px-6 md:px-12 lg:px-24 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="container mx-auto px-6 md:px-16 lg:px-32 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <motion.div
               initial="hidden"
@@ -176,7 +176,7 @@ export default function Home() {
 
         {/* CONDITIONS WE TREAT */}
         <section className="py-20 bg-[#faf9f6]">
-          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+          <div className="container mx-auto px-6 md:px-16 lg:px-32">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
               <p className="text-[#6b7280] max-w-2xl mx-auto">
@@ -206,7 +206,7 @@ export default function Home() {
 
         {/* SERVICES PREVIEW */}
         <section className="py-24 bg-white">
-          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+          <div className="container mx-auto px-6 md:px-16 lg:px-32">
             <div className="text-center mb-16 space-y-4">
               <h2 className="text-4xl font-serif font-bold text-[#2d5016]">Our Core Therapies</h2>
               <p className="text-[#6b7280] max-w-2xl mx-auto">
@@ -268,7 +268,7 @@ export default function Home() {
 
         {/* TESTIMONIALS */}
         <section className="py-24 bg-[#f2e9e4]/40">
-          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+          <div className="container mx-auto px-6 md:px-16 lg:px-32">
             <h2 className="text-4xl font-serif font-bold text-center mb-16 text-[#1f2937]">
               Healing Stories
             </h2>
@@ -301,7 +301,7 @@ export default function Home() {
 
         {/* CTA */}
         <section className="py-24 relative overflow-hidden bg-[#9caf88] text-white">
-          <div className="container relative z-10 px-6 md:px-12 lg:px-24 text-center">
+          <div className="container relative z-10 px-6 md:px-16 lg:px-32 text-center">
             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Begin Your Wellness Journey</h2>
             <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto text-white/90">
               Ready to restore your natural balance? Schedule your consultation with Dr. Priyanka today.

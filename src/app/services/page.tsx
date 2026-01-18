@@ -52,7 +52,7 @@ function ServicesContent() {
 
             <main className="flex-grow pt-20">
                 <section className="bg-muted/30 py-16 md:py-24">
-                    <div className="container mx-auto px-4 md:px-6 text-center">
+                    <div className="container mx-auto px-6 md:px-16 lg:px-32 text-center">
                         <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-6">Our Treatments</h1>
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                             Explore our range of natural therapies designed to restore vitality and wellness.
@@ -71,7 +71,7 @@ function ServicesContent() {
                     </div>
                 </section>
 
-                <section className="py-16 md:py-24 container mx-auto px-4 md:px-6">
+                <section className="py-16 md:py-24 container mx-auto px-6 md:px-16 lg:px-32">
                     {filteredServices.length > 0 ? (
                         <motion.div
                             initial="hidden"
