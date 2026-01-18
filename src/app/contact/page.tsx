@@ -46,13 +46,15 @@ export default function ContactPage() {
                                         <p className="text-muted-foreground">SF-209, Siddharth Magnum Plus,<br />Next to Bansal Mall, Tarsali-390009</p>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-4">
                                     <div className="bg-primary/10 p-3 rounded-full"><Phone className="text-primary" /></div>
                                     <div>
                                         <h3 className="font-semibold text-lg">Call Us</h3>
                                         <p className="text-muted-foreground">+91 95862 39293</p>
                                         <p className="text-muted-foreground">+91 88664 55269</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Mon-Sat, 9am - 7pm</p>
+                                        <div className="mt-2 text-sm text-muted-foreground bg-gray-50 p-2 rounded-md border border-gray-100">
+                                            <p><span className="font-semibold text-[#2d5016]">Morning:</span> 11:00 AM - 01:00 PM</p>
+                                            <p><span className="font-semibold text-[#2d5016]">Evening:</span> 06:00 PM - 08:00 PM</p>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
@@ -119,6 +121,6 @@ export default function ContactPage() {
                 </section>
             </main>
             <Footer />
-        </div>
+        </div >
     );
 }
