@@ -14,10 +14,19 @@ export async function GET() {
 
         // 1. Check if user exists in Auth
         const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        if (listError) throw listError;
+
         let userId = users?.users.find(u => u.email === email)?.id;
 
-        if (!userId) {
-            // Create Auth User
+        if (userId) {
+            // User exists - update password
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+                password,
+                email_confirm: true
+            });
+            if (updateError) throw updateError;
+        } else {
+            // Create new Auth User
             const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
                 email,
                 password,
@@ -28,7 +37,7 @@ export async function GET() {
             userId = newUser.user.id;
         }
 
-        // 2. Ensure Profile exists and is Admin
+        // 2. Ensure Profile exists and is Admin (use upsert with onConflict)
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .upsert({
@@ -38,6 +47,9 @@ export async function GET() {
                 role: 'admin',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'id',
+                ignoreDuplicates: false
             });
 
         if (profileError) throw profileError;
