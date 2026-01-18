@@ -24,14 +24,26 @@ export async function POST(req: Request) {
         const appointmentsToInsert = [];
         let currentDate = new Date(`${date}T${time}:00`);
 
+        // Check if user exists to link profile
+        let patientId = null;
+        if (email) {
+            const { data: profile } = await supabaseAdmin
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .single();
+            if (profile) patientId = profile.id;
+        }
+
         // Generate Appointment Slots
         for (let i = 0; i < numSessions; i++) {
             // Check Availability logic would go here (omitted for MVP speed, but critical for prod)
             // For now, we assume availability or let Supabase constraints handle overlap if set.
 
             appointmentsToInsert.push({
+                patient_id: patientId, // Link if exists
                 patient_name: name,
-                patient_email: email, // Assuming column exists or will be added
+                patient_email: email,
                 patient_phone: phone,
                 service_id: serviceId,
                 start_time: currentDate.toISOString(),
