@@ -200,7 +200,7 @@ export default function Home() {
         </section>
 
         {/* SERVICES PREVIEW */}
-        < section className="py-24 bg-white" >
+        <section className="py-24 bg-white">
           <div className="container mx-auto px-6 md:px-12 lg:px-24">
             <div className="text-center mb-16 space-y-4">
               <h2 className="text-4xl font-serif font-bold text-[#2d5016]">Our Core Therapies</h2>
@@ -259,10 +259,10 @@ export default function Home() {
               </Button>
             </div>
           </div>
-        </section >
+        </section>
 
         {/* TESTIMONIALS */}
-        < section className="py-24 bg-[#f2e9e4]/40" >
+        <section className="py-24 bg-[#f2e9e4]/40">
           <div className="container mx-auto px-6 md:px-12 lg:px-24">
             <h2 className="text-4xl font-serif font-bold text-center mb-16 text-[#1f2937]">
               Healing Stories
@@ -292,10 +292,10 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section >
+        </section>
 
         {/* CTA */}
-        < section className="py-24 relative overflow-hidden bg-[#9caf88] text-white" >
+        <section className="py-24 relative overflow-hidden bg-[#9caf88] text-white">
           <div className="container relative z-10 px-6 md:px-12 lg:px-24 text-center">
             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Begin Your Wellness Journey</h2>
             <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto text-white/90">
@@ -305,10 +305,10 @@ export default function Home() {
               <Link href="/book">Booking Available Now</Link>
             </Button>
           </div>
-        </section >
+        </section>
 
-      </main >
+      </main>
       <Footer />
-    </div >
+    </div>
   );
 }

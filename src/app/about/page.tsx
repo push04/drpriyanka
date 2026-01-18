@@ -14,8 +14,8 @@ export default function AboutPage() {
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                             <Image
-                                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=2070&auto=format&fit=crop"
-                                alt="Doctor"
+                                src="https://lh3.googleusercontent.com/p/AF1QipNFSsD9RIzrM6EhtktG5TYo1-Ma5UoBYAVSbYBb=s1360-w1360-h1020-rw"
+                                alt="Dr. Priyanka Clinic Signboard"
                                 fill
                                 className="object-cover"
                             />
