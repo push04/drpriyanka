@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Leaf, Lock, ArrowRight, ShieldAlert } from "lucide-react";
+import { Leaf, Lock, ArrowRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -10,11 +10,10 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminLoginPage() {
-    const [email, setEmail] = useState("admin");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSettingUp, setIsSettingUp] = useState(false);
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -48,7 +47,7 @@ export default function AdminLoginPage() {
                 }
 
                 // Success
-                localStorage.setItem("admin_session", "true"); // Keep for layout check
+                localStorage.setItem("admin_session", "true");
                 router.push("/admin");
             }
         } catch (err: any) {
@@ -58,107 +57,81 @@ export default function AdminLoginPage() {
         }
     };
 
-    const handleSetup = async () => {
-        setIsSettingUp(true);
-        try {
-            const res = await fetch('/api/admin/setup');
-            const data = await res.json();
-            if (data.success) {
-                alert("Admin account reset! \nUsername: admin \nPassword: priyanka");
-                setPassword("priyanka");
-            } else {
-                alert("Setup failed: " + data.error);
-            }
-        } catch (e) {
-            alert("Setup failed. Check console.");
-        } finally {
-            setIsSettingUp(false);
-        }
-    };
-
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#2d5016]/5 p-4">
-            <Card className="w-full max-w-md shadow-2xl border-0">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2d5016]/10 via-white to-[#2d5016]/5 p-4">
+            <Card className="w-full max-w-md shadow-2xl border-0 backdrop-blur-sm bg-white/95">
                 <CardHeader className="text-center space-y-4 pb-2">
-                    <div className="mx-auto bg-[#2d5016]/10 w-16 h-16 rounded-full flex items-center justify-center">
-                        <Leaf className="w-8 h-8 text-[#2d5016]" />
+                    <div className="mx-auto bg-gradient-to-br from-[#2d5016] to-[#4a7c28] w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                        <Leaf className="w-8 h-8 text-white" />
                     </div>
                     <div>
                         <CardTitle className="text-2xl font-serif font-bold text-[#2d5016]">Admin Portal</CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-[#2d5016]/70">
                             Dr. Priyanka's Naturopathy Clinic
                         </CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-4">
+                    <form onSubmit={handleLogin} className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="email">Username or Email</Label>
+                            <Label htmlFor="email" className="text-[#2d5016] font-medium">Username or Email</Label>
                             <div className="relative">
                                 <Input
                                     id="email"
                                     type="text"
-                                    placeholder="admin"
+                                    placeholder="Enter your username"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 h-11 border-[#2d5016]/20 focus:border-[#2d5016] focus:ring-[#2d5016]/20"
                                     required
                                 />
-                                <div className="absolute left-3 top-2.5 text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                </div>
+                                <User className="absolute left-3 top-3 h-4 w-4 text-[#2d5016]/50" />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password" className="text-[#2d5016] font-medium">Password</Label>
                             <div className="relative">
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="••••••••"
+                                    placeholder="Enter your password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 h-11 border-[#2d5016]/20 focus:border-[#2d5016] focus:ring-[#2d5016]/20"
                                     required
                                 />
-                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-[#2d5016]/50" />
                             </div>
                         </div>
 
                         {error && (
-                            <div className="text-sm text-red-500 bg-red-50 p-2 rounded-md text-center">
+                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg text-center border border-red-200">
                                 {error}
                             </div>
                         )}
 
                         <Button
                             type="submit"
-                            className="w-full bg-[#2d5016] hover:bg-[#2d5016]/90 text-white h-11"
+                            className="w-full bg-gradient-to-r from-[#2d5016] to-[#4a7c28] hover:from-[#3d6a1f] hover:to-[#5a8c38] text-white h-12 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                             disabled={isLoading}
                         >
-                            {isLoading ? "Authenticating..." : (
+                            {isLoading ? (
+                                <span className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    Authenticating...
+                                </span>
+                            ) : (
                                 <span className="flex items-center gap-2">
                                     Sign In <ArrowRight className="w-4 h-4" />
                                 </span>
                             )}
                         </Button>
                     </form>
-
-                    <div className="mt-6 pt-6 border-t text-center">
-                        <p className="text-xs text-muted-foreground mb-2">First time here?</p>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleSetup}
-                            disabled={isSettingUp}
-                            className="text-xs h-8"
-                        >
-                            {isSettingUp ? "Setting up..." : <><ShieldAlert className="w-3 h-3 mr-1" /> Initialize Default Admin</>}
-                        </Button>
-                    </div>
                 </CardContent>
-                <CardFooter className="text-center text-xs text-muted-foreground pb-6">
-                    Authorized personnel only. <br /> Access is monitored and logged.
+                <CardFooter className="flex flex-col items-center text-center text-xs text-[#2d5016]/60 pb-6 pt-2">
+                    <div className="w-12 h-px bg-[#2d5016]/20 mb-4" />
+                    <p>Authorized personnel only.</p>
+                    <p className="mt-1">Access is monitored and logged.</p>
                 </CardFooter>
             </Card>
         </div>
