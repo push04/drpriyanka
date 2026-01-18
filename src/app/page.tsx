@@ -175,7 +175,7 @@ export default function Home() {
 
 
         {/* CONDITIONS WE TREAT */}
-        < section className="py-20 bg-[#faf9f6]" >
+        <section className="py-20 bg-[#faf9f6]">
           <div className="container mx-auto px-6 md:px-12 lg:px-24">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
@@ -197,7 +197,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section >
+        </section>
 
         {/* SERVICES PREVIEW */}
         < section className="py-24 bg-white" >
