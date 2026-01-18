@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Message = {
@@ -66,23 +66,24 @@ export default function AIChatWidget() {
                         className="mb-4"
                     >
                         <Card className="w-[350px] shadow-2xl border-[#2d5016]/20">
-                            <CardHeader className="bg-[#2d5016] text-white rounded-t-lg p-4 flex flex-row items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Bot className="w-6 h-6" />
+                            {/* Header - Explicitly styled for visibility */}
+                            <div className="bg-[#2d5016] p-4 flex justify-between items-center rounded-t-lg shadow-md">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                                        <Bot className="w-6 h-6 text-white" />
+                                    </div>
                                     <div>
-                                        <CardTitle className="text-lg font-serif">Wellness Assistant</CardTitle>
-                                        <p className="text-xs text-white/80">Online • Typically replies instantly</p>
+                                        <h3 className="font-serif font-semibold text-lg text-white">Wellness Assistant</h3>
+                                        <p className="text-xs text-white/80 flex items-center gap-1">
+                                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                            Online • Often replies instantly
+                                        </p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-white hover:bg-white/20 h-8 w-8"
-                                    onClick={() => setIsOpen(false)}
-                                >
+                                <Button size="icon" variant="ghost" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 rounded-full transition-colors">
                                     <X className="w-5 h-5" />
                                 </Button>
-                            </CardHeader>
+                            </div>
 
                             <CardContent className="h-[400px] overflow-y-auto p-4 bg-[#faf9f6]" ref={scrollRef}>
                                 <div className="space-y-4">
@@ -93,8 +94,8 @@ export default function AIChatWidget() {
                                         >
                                             <div
                                                 className={`max-w-[80%] p-3 rounded-lg text-sm ${msg.role === 'user'
-                                                        ? 'bg-[#2d5016] text-white rounded-tr-none'
-                                                        : 'bg-white border rounded-tl-none shadow-sm'
+                                                    ? 'bg-[#2d5016] text-white rounded-tr-none'
+                                                    : 'bg-white border rounded-tl-none shadow-sm'
                                                     }`}
                                             >
                                                 {msg.content}

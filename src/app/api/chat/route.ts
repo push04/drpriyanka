@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Initialize Supabase Admin Client safely
-// If keys are missing, we log a warning but DO NOT crash the standard chat.
 let supabaseAdmin: any = null;
 try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
            - Patient Name
            - Service Name
            - Preferred Date (YYYY-MM-DD format if possible, or "tomorrow")
-           - Preferred Time (e.g., 10:00 AM)
+           - Preferred Time (e.g., 10:00 or 14:00 - USE 24-HOUR FORMAT)
            - Phone Number
 
         3. **CRITICAL**: Once you have ALL 5 details, output a JSON block strictly in this format:
@@ -159,14 +158,20 @@ export async function POST(req: Request) {
                             .limit(1)
                             .maybeSingle();
 
+                        // SANITIZATION: Clean up time format
+                        // Removes AM/PM, ensuring strict ISO compatibility for Supabase
+                        let cleanTime = booking.time.toUpperCase().replace(/(AM|PM)/g, '').trim();
+                        if (cleanTime.split(':').length === 1) cleanTime += ":00"; // Handle "10" -> "10:00"
+                        if (cleanTime.length === 4) cleanTime = "0" + cleanTime; // Handle "9:00" -> "09:00"
+
                         const { error: insertError } = await supabaseAdmin
                             .from('appointments')
                             .insert({
                                 patient_name: booking.patient_name,
                                 patient_phone: booking.phone,
-                                service_id: serviceData?.id || null, // Allow null if service not found, fix manually later
-                                start_time: `${booking.date}T${booking.time}:00`,
-                                end_time: `${booking.date}T${booking.time}:00`,
+                                service_id: serviceData?.id || null,
+                                start_time: `${booking.date}T${cleanTime}:00`,
+                                end_time: `${booking.date}T${cleanTime}:00`,
                                 status: 'confirmed',
                                 notes: `Booked by AI Agent (${usedModel})`
                             });
