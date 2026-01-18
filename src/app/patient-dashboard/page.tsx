@@ -1,18 +1,76 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Activity, Clock, FileText } from "lucide-react";
+import { Calendar, Activity, Clock, FileText, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
 
 export default function PatientDashboard() {
+    const { user, isLoading: authLoading } = useAuth();
+    const [appointments, setAppointments] = useState<any[]>([]);
+    const [metrics, setMetrics] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            if (!user) return;
+
+            try {
+                // Fetch upcoming appointments
+                const { data: apts, error: aptError } = await supabase
+                    .from('appointments')
+                    .select('*, services(name, duration)')
+                    .eq('patient_id', user.id)
+                    .gte('appointment_date', new Date().toISOString().split('T')[0])
+                    .order('appointment_date', { ascending: true })
+                    .limit(2);
+
+                if (aptError) console.error("Error fetching appointments:", aptError);
+                else setAppointments(apts || []);
+
+                // Fetch latest vitals
+                const { data: vital, error: vitalError } = await supabase
+                    .from('health_metrics')
+                    .select('*')
+                    .eq('patient_id', user.id)
+                    .eq('category', 'Vitals')
+                    .order('recorded_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (vitalError && vitalError.code !== 'PGRST116') console.error("Error fetching vitals:", vitalError);
+                else setMetrics(vital);
+
+            } catch (error) {
+                console.error("Dashboard fetch error:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        if (!authLoading) {
+            fetchData();
+        }
+    }, [user, authLoading]);
+
+    if (authLoading || loading) {
+        return <div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    }
+
+    const nextAppointment = appointments[0];
+    const userName = user?.user_metadata?.full_name || "Patient";
+
     return (
         <div className="space-y-8">
             {/* Welcome Section */}
             <div className="bg-[#2d5016] rounded-2xl p-8 text-white relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-3xl font-serif font-bold mb-2">Hello, Jane!</h2>
+                    <h2 className="text-3xl font-serif font-bold mb-2">Hello, {userName}!</h2>
                     <p className="opacity-90 max-w-xl">
                         "Healing is a matter of time, but it is sometimes also a matter of opportunity."
                     </p>
@@ -28,8 +86,18 @@ export default function PatientDashboard() {
                         <Calendar className="h-4 w-4 text-[#2d5016]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold">Today, 4:00 PM</div>
-                        <p className="text-xs text-muted-foreground mt-1">Therapeutic Yoga with Dr. Priyanka</p>
+                        {nextAppointment ? (
+                            <>
+                                <div className="text-xl font-bold">
+                                    {format(new Date(nextAppointment.appointment_date + 'T' + nextAppointment.appointment_time), 'MMM d, h:mm a')}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {nextAppointment.services?.name || "Consultation"}
+                                </p>
+                            </>
+                        ) : (
+                            <div className="text-sm text-muted-foreground py-2">No upcoming sessions</div>
+                        )}
                     </CardContent>
                 </Card>
                 <Card>
@@ -38,8 +106,8 @@ export default function PatientDashboard() {
                         <Activity className="h-4 w-4 text-[#e07a5f]" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">12 Days</div>
-                        <p className="text-xs text-muted-foreground mt-1">Consistent attendance!</p>
+                        <div className="text-2xl font-bold">0 Days</div>
+                        <p className="text-xs text-muted-foreground mt-1">Start a habit today!</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -58,7 +126,11 @@ export default function PatientDashboard() {
                         <Activity className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">BP: 120/80</div>
+                        {metrics ? (
+                            <div className="text-2xl font-bold">BP: {metrics.data?.bp_systolic}/{metrics.data?.bp_diastolic}</div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground py-1">No recent vitals</div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                             <Link href="/patient-dashboard/metrics" className="hover:underline text-primary">Log new reading &rarr;</Link>
                         </p>
@@ -74,26 +146,34 @@ export default function PatientDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-4 border rounded-lg border-l-4 border-l-[#2d5016] bg-[#f9f9f9]">
-                                <div className="text-center min-w-[60px]">
-                                    <div className="text-xs font-bold text-muted-foreground uppercase">Today</div>
-                                    <div className="text-xl font-bold">17</div>
+                            {appointments.length > 0 ? (
+                                appointments.map((apt) => (
+                                    <div key={apt.id} className="flex items-center gap-4 p-4 border rounded-lg border-l-4 border-l-[#2d5016] bg-[#f9f9f9]">
+                                        <div className="text-center min-w-[60px]">
+                                            <div className="text-xs font-bold text-muted-foreground uppercase">
+                                                {format(new Date(apt.appointment_date), 'MMM')}
+                                            </div>
+                                            <div className="text-xl font-bold">
+                                                {format(new Date(apt.appointment_date), 'd')}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="font-bold">{apt.services?.name || "Consultation"}</div>
+                                            <div className="text-sm text-muted-foreground">
+                                                {format(new Date(`2000-01-01T${apt.appointment_time}`), 'h:mm a')} • {apt.services?.duration || "30 min"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <p>No upcoming appointments.</p>
+                                    <Button variant="link" asChild className="mt-2">
+                                        <Link href="/book">Book Now</Link>
+                                    </Button>
                                 </div>
-                                <div>
-                                    <div className="font-bold">Therapeutic Yoga</div>
-                                    <div className="text-sm text-muted-foreground">4:00 PM • 60 min</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 p-4 border rounded-lg bg-white opacity-60">
-                                <div className="text-center min-w-[60px]">
-                                    <div className="text-xs font-bold text-muted-foreground uppercase">Jan</div>
-                                    <div className="text-xl font-bold">24</div>
-                                </div>
-                                <div>
-                                    <div className="font-bold">Mud Therapy</div>
-                                    <div className="text-sm text-muted-foreground">10:00 AM • 45 min</div>
-                                </div>
-                            </div>
+                            )}
+
                             <Button variant="outline" className="w-full" asChild>
                                 <Link href="/patient-dashboard/appointments">View All Appointments</Link>
                             </Button>
@@ -107,25 +187,10 @@ export default function PatientDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-3 border-b">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="w-8 h-8 text-blue-100 fill-blue-600" />
-                                    <div>
-                                        <div className="font-medium">Diet Plan - Jan 2026</div>
-                                        <div className="text-xs text-muted-foreground">Added yesterday</div>
-                                    </div>
-                                </div>
-                                <Button variant="ghost" size="sm">Download</Button>
-                            </div>
-                            <div className="flex items-center justify-between p-3 border-b">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="w-8 h-8 text-orange-100 fill-orange-600" />
-                                    <div>
-                                        <div className="font-medium">Prescription #4092</div>
-                                        <div className="text-xs text-muted-foreground">Jan 10, 2026</div>
-                                    </div>
-                                </div>
-                                <Button variant="ghost" size="sm">Download</Button>
+                            {/* Placeholder for now as documents table is usually empty in fresh setup */}
+                            <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                                <FileText className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                                <p>No documents uploaded yet.</p>
                             </div>
                             <Button variant="outline" className="w-full">View All Records</Button>
                         </div>
