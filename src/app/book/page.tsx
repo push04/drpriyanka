@@ -13,9 +13,13 @@ import { Input } from "@/components/ui/input";
 import { services } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link"; // Ensure Link is imported
+
 function BookingForm() {
     const searchParams = useSearchParams();
     const preSelectedServiceId = searchParams.get("service");
+    const { user, isLoading } = useAuth(); // Auth Hook
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -29,15 +33,25 @@ function BookingForm() {
         sessions: 1
     });
 
+    // Auto-fill user details when authenticated
+    useState(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.user_metadata?.full_name || "",
+                email: user.email || ""
+            }));
+        }
+    });
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isWaitlist, setIsWaitlist] = useState(false);
 
     const selectedService = services.find(s => s.id === formData.serviceId);
 
     const handleNext = () => setStep(prev => prev + 1);
     const handleBack = () => setStep(prev => prev - 1);
-
-    const [isWaitlist, setIsWaitlist] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -70,6 +84,34 @@ function BookingForm() {
         }
     };
 
+    // 1. Loading State
+    if (isLoading) {
+        return <div className="text-center py-20">Loading...</div>;
+    }
+
+    // 2. Auth Requirement Prompt
+    if (!user) {
+        return (
+            <Card className="max-w-md mx-auto p-8 text-center shadow-lg border-t-4 border-t-[#2d5016]">
+                <div className="bg-[#2d5016]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Check className="w-8 h-8 text-[#2d5016]" /> {/* Reusing Check icon for visual consistency, or could use Lock/User */}
+                </div>
+                <h2 className="text-2xl font-serif font-bold text-[#2d5016] mb-3">Login Required</h2>
+                <p className="text-muted-foreground mb-8">
+                    To ensure the best care and keep track of your health journey, please log in or create an account to book an appointment.
+                </p>
+                <div className="flex flex-col gap-3">
+                    <Button asChild size="lg" className="w-full">
+                        <Link href={`/login?redirect=/book${preSelectedServiceId ? `?service=${preSelectedServiceId}` : ''}`}>Log In</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg" className="w-full">
+                        <Link href="/signup">Create Account</Link>
+                    </Button>
+                </div>
+            </Card>
+        );
+    }
+
     if (isSuccess) {
         return (
             <div className="max-w-md mx-auto text-center py-12">
@@ -89,7 +131,7 @@ function BookingForm() {
                     )}
                 </p>
                 <Button asChild>
-                    <a href="/">Return Home</a>
+                    <Link href="/patient-dashboard">Go to Dashboard</Link>
                 </Button>
             </div>
         );
@@ -251,6 +293,8 @@ function BookingForm() {
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            readOnly={!!user} // Locked if coming from auth
+                                            className={user ? "bg-muted/50" : ""}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -269,6 +313,8 @@ function BookingForm() {
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        readOnly={!!user} // Locked if coming from auth
+                                        className={user ? "bg-muted/50" : ""}
                                     />
                                 </div>
 
