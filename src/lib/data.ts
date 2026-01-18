@@ -6,7 +6,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1599447421405-075ad15869f3?q=80&w=2070&auto=format&fit=crop",
         price: 500,
         duration: "60 min",
-        category: "Yoga & Meditation"
+        category: "Yoga & Meditation",
+        tags: ["Stress", "Anxiety", "Back Pain", "Cervical Spondylitis", "Hypertension", "PCOD", "Menstrual Disorder", "Thyroid", "Mental Health"]
     },
     {
         id: "2",
@@ -15,7 +16,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=2070&auto=format&fit=crop",
         price: 800,
         duration: "45 min",
-        category: "Hydrotherapy"
+        category: "Hydrotherapy",
+        tags: ["Skin Diseases", "Detox", "General Ailments", "Chronic Cough", "Asthma"]
     },
     {
         id: "3",
@@ -24,7 +26,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1544367563-12123d8965cd?q=80&w=2070&auto=format&fit=crop",
         price: 1200,
         duration: "60 min",
-        category: "Massage"
+        category: "Massage",
+        tags: ["Back Pain", "Knee Pain", "Frozen Shoulder", "Stress", "Body Pain", "Paralysis", "Facial Rejuvenation"]
     },
     {
         id: "4",
@@ -33,7 +36,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?q=80&w=2070&auto=format&fit=crop",
         price: 1000,
         duration: "45 min",
-        category: "Therapy"
+        category: "Therapy",
+        tags: ["Headache", "Migraine", "Chronic Cough", "Asthma", "Frozen Shoulder", "Knee Pain", "Sinusitis"]
     },
     {
         id: "5",
@@ -42,7 +46,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2070&auto=format&fit=crop",
         price: 700,
         duration: "30 min",
-        category: "Diet & Nutrition"
+        category: "Diet & Nutrition",
+        tags: ["Weight Loss", "Obesity", "Diabetes", "PCOD", "Acidity", "Constipation", "Hypertension", "Increased Immunity"]
     },
     {
         id: "6",
@@ -51,7 +56,8 @@ export const services = [
         image: "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?q=80&w=2070&auto=format&fit=crop",
         price: 600,
         duration: "40 min",
-        category: "Hydrotherapy"
+        category: "Hydrotherapy",
+        tags: ["Skin Diseases", "Acidity", "Constipation", "Stomach Issues", "Face Rejuvination"]
     }
 ];
 

@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -24,8 +24,11 @@ function BookingForm() {
         time: "",
         name: "",
         email: "",
-        phone: ""
+        phone: "",
+        recurrence: "none", // 'none', 'weekly', 'monthly'
+        sessions: 1
     });
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -34,13 +37,37 @@ function BookingForm() {
     const handleNext = () => setStep(prev => prev + 1);
     const handleBack = () => setStep(prev => prev - 1);
 
+    const [isWaitlist, setIsWaitlist] = useState(false);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsSubmitting(false);
-        setIsSuccess(true);
+
+        const endpoint = isWaitlist ? '/api/waitlist/join' : '/api/appointments/book';
+        const payload = isWaitlist
+            ? { ...formData, preferredDate: formData.date, notes: `Waitlist for ${selectedService?.name}` }
+            : formData;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Submission failed');
+            }
+
+            setIsSubmitting(false);
+            setIsSuccess(true);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Something went wrong. Please try again.');
+            setIsSubmitting(false);
+        }
     };
 
     if (isSuccess) {
@@ -49,9 +76,17 @@ function BookingForm() {
                 <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Check className="w-10 h-10" />
                 </div>
-                <h2 className="text-3xl font-serif font-bold text-primary mb-4">Booking Confirmed!</h2>
+                <h2 className="text-3xl font-serif font-bold text-primary mb-4">
+                    {isWaitlist ? "Added to Waitlist!" : "Booking Confirmed!"}
+                </h2>
                 <p className="text-muted-foreground mb-8">
-                    Thank you {formData.name}. We have sent a confirmation email to {formData.email}.
+                    {isWaitlist
+                        ? `We have added you to the waitlist for ${selectedService?.name}. We will notify you at ${formData.email} when a slot becomes available.`
+                        : `Thank you ${formData.name}. We have sent a confirmation email to ${formData.email}.`
+                    }
+                    {!isWaitlist && formData.recurrence !== 'none' && (
+                        <span className="block mt-2 font-medium">This is a persistent {formData.recurrence} booking for {formData.sessions} sessions.</span>
+                    )}
                 </p>
                 <Button asChild>
                     <a href="/">Return Home</a>
@@ -146,10 +181,52 @@ function BookingForm() {
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Recurrence Options */}
+                                <div className="space-y-4 md:col-span-2 border-t pt-4 mt-4">
+                                    <h3 className="font-medium text-primary">Recurring Sessions (Optional)</h3>
+                                    <div className="flex flex-wrap gap-4">
+                                        <div
+                                            onClick={() => setFormData({ ...formData, recurrence: 'none', sessions: 1 })}
+                                            className={cn("border px-4 py-2 rounded cursor-pointer", formData.recurrence === 'none' ? "bg-primary text-white border-primary" : "bg-white hover:border-primary")}
+                                        >
+                                            Single Session
+                                        </div>
+                                        <div
+                                            onClick={() => setFormData({ ...formData, recurrence: 'weekly', sessions: 4 })}
+                                            className={cn("border px-4 py-2 rounded cursor-pointer", formData.recurrence === 'weekly' ? "bg-primary text-white border-primary" : "bg-white hover:border-primary")}
+                                        >
+                                            Weekly (4 Sessions)
+                                        </div>
+                                        <div
+                                            onClick={() => setFormData({ ...formData, recurrence: 'monthly', sessions: 3 })}
+                                            className={cn("border px-4 py-2 rounded cursor-pointer", formData.recurrence === 'monthly' ? "bg-primary text-white border-primary" : "bg-white hover:border-primary")}
+                                        >
+                                            Monthly (3 Sessions)
+                                        </div>
+                                    </div>
+                                    {formData.recurrence !== 'none' && (
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            This will book {formData.sessions} sessions starting from {formData.date || "selected date"}.
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="mt-4 text-center">
+                                    <button
+                                        onClick={() => {
+                                            setIsWaitlist(true);
+                                            // Pre-fill date if selected, else just move next
+                                            handleNext();
+                                        }}
+                                        className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+                                    >
+                                        Can't find a suitable time? Join our Waitlist
+                                    </button>
+                                </div>
                             </div>
                             <div className="mt-8 flex justify-between">
                                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                                <Button onClick={handleNext} disabled={!formData.date || !formData.time}>
+                                <Button onClick={() => { setIsWaitlist(false); handleNext(); }} disabled={!formData.date || !formData.time}>
                                     Next Step <ChevronRight className="w-4 h-4 ml-1" />
                                 </Button>
                             </div>
@@ -163,7 +240,9 @@ function BookingForm() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                         >
-                            <h2 className="text-2xl font-serif font-bold mb-6">Your Details</h2>
+                            <h2 className="text-2xl font-serif font-bold mb-6">
+                                {isWaitlist ? "Join Waitlist" : "Your Details"}
+                            </h2>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -203,16 +282,22 @@ function BookingForm() {
                                         <span>Date & Time:</span>
                                         <span className="font-medium">{formData.date} at {formData.time}</span>
                                     </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span>Type:</span>
+                                        <span className="font-medium capitalize">{formData.recurrence === 'none' ? 'Single Session' : `${formData.recurrence} (${formData.sessions} sessions)`}</span>
+                                    </div>
                                     <div className="flex justify-between text-sm pt-2 border-t">
                                         <span>Total:</span>
-                                        <span className="font-bold text-primary">₹{selectedService?.price}</span>
+                                        <span className="font-bold text-primary">
+                                            ₹{(selectedService?.price || 0) * formData.sessions}
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div className="mt-8 flex justify-between">
                                     <Button type="button" variant="outline" onClick={handleBack}>Back</Button>
                                     <Button type="submit" size="lg" disabled={isSubmitting}>
-                                        {isSubmitting ? "Confirming..." : "Confirm Booking"}
+                                        {isSubmitting ? "Processing..." : (isWaitlist ? "Join Waitlist" : "Confirm Booking")}
                                     </Button>
                                 </div>
                             </form>

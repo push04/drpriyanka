@@ -26,56 +26,51 @@ export default function AdminDashboardPage() {
         try {
             // 1. Get Today's Appointments Count
             const today = new Date().toISOString().split('T')[0];
-            const { count: todayCount, error: todayError } = await supabase
+            const { count: todayCount } = await supabase
                 .from('appointments')
                 .select('*', { count: 'exact', head: true })
                 .gte('start_time', `${today}T00:00:00`)
                 .lte('start_time', `${today}T23:59:59`);
 
             // 2. Get Total Patients Count
-            const { count: patientCount, error: patientError } = await supabase
+            const { count: patientCount } = await supabase
                 .from('profiles')
                 .select('*', { count: 'exact', head: true })
                 .eq('role', 'patient');
 
             // 3. Get Pending Requests Count
-            const { count: pendingCount, error: pendingError } = await supabase
+            const { count: pendingCount } = await supabase
                 .from('appointments')
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'pending');
 
-            // 4. Get Recent Appointments (with Service Name if possible, else raw)
-            // Note: In a real production app, use a join. For MVP, we'll fetch raw.
-            const { data: recentData, error: recentError } = await supabase
+            // 4. Get Recent Appointments with Joins
+            const { data: recentData, error } = await supabase
                 .from('appointments')
-                .select('id, start_time, status, patient_name, notes, service_id') // Added patient_name (guest) support
+                .select(`
+                    id, 
+                    start_time, 
+                    status, 
+                    profiles (full_name),
+                    services (name)
+                `)
                 .order('created_at', { ascending: false })
                 .limit(5);
 
-            // Fetch service names for recent appointments
-            let formattedRecent: any[] = [];
-            if (recentData) {
-                // Fetch service details for these appointments
-                const serviceIds = recentData.map(a => a.service_id);
-                const { data: services } = await supabase.from('services').select('id, name').in('id', serviceIds);
+            if (error) throw error;
 
-                formattedRecent = recentData.map(apt => {
-                    const service = services?.find(s => s.id === apt.service_id);
-                    const dateObj = new Date(apt.start_time);
-                    return {
-                        id: apt.id,
-                        patient: apt.patient_name || "Registered Patient", // Fallback for now
-                        service: service?.name || "Service",
-                        time: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        status: apt.status
-                    };
-                });
-            }
+            const formattedRecent = recentData ? recentData.map((apt: any) => ({
+                id: apt.id,
+                patient: apt.profiles?.full_name || "Unknown Patient",
+                service: apt.services?.name || "Service",
+                time: new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                status: apt.status
+            })) : [];
 
             setStats([
                 { label: "Today's Appointments", value: todayCount?.toString() || "0", icon: Calendar, change: "Today" },
                 { label: "Total Patients", value: patientCount?.toString() || "0", icon: Users, change: "All time" },
-                { label: "Revenue (Est.)", value: "₹--", icon: DollarSign, change: "Not connected" }, // Revenue logic omitted for MVP simplicity
+                { label: "Revenue (Est.)", value: "₹--", icon: DollarSign, change: "Not connected" },
                 { label: "Pending Requests", value: pendingCount?.toString() || "0", icon: Activity, change: "Action needed" },
             ]);
             setRecentAppointments(formattedRecent);

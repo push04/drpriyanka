@@ -189,11 +189,16 @@ export default function Home() {
                 "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
                 "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
                 "General Ailments", "Acidity", "Weight Loss", "Obesity",
-                "Face Rejuvination", "General Health"
+                "Face Rejuvination", "General Health", "PCOD", "Diabetes", "Hypertension",
+                "Menstrual Disorder", "Thyroid", "Anxiety", "Stress", "Headache"
               ].map((condition, idx) => (
-                <div key={idx} className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-6 py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-default font-medium">
+                <Link
+                  key={idx}
+                  href={`/services?q=${encodeURIComponent(condition)}`}
+                  className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-6 py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-pointer font-medium"
+                >
                   {condition}
-                </div>
+                </Link>
               ))}
             </div>
           </div>

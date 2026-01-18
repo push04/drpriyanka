@@ -58,9 +58,13 @@ export default function AboutPage() {
                                 "Facial Rejuvenation", "PCOD", "Diabetes", "Hypertension",
                                 "Menstrual Disorder", "Thyroid", "Anxiety", "Stress", "Headache"
                             ].map((item, idx) => (
-                                <span key={idx} className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-4 py-2 rounded-full text-sm font-medium shadow-sm">
+                                <Link
+                                    key={idx}
+                                    href={`/services?q=${encodeURIComponent(item)}`}
+                                    className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-4 py-2 rounded-full text-sm font-medium shadow-sm hover:bg-[#2d5016] hover:text-white transition-all"
+                                >
                                     {item}
-                                </span>
+                                </Link>
                             ))}
                         </div>
                     </div>

@@ -36,15 +36,29 @@ export async function POST(req: Request) {
         });
 
         const body = await req.json();
-        const { messages } = body;
+        const { messages, userId, sessionId } = body;
 
         if (!messages) {
             return NextResponse.json({ error: "Bad Request: No messages provided." }, { status: 400 });
         }
 
-        // 1. Enhanced System Prompt
+        const latestUserMessage = messages[messages.length - 1];
+
+        // 0. LOG USER MESSAGE (Async, don't block)
+        if (supabaseAdmin && (userId || sessionId) && latestUserMessage.role === 'user') {
+            supabaseAdmin.from('chat_logs').insert({
+                user_id: userId || null,
+                session_id: sessionId || 'unknown',
+                role: 'user',
+                content: latestUserMessage.content
+            }).then(({ error }: any) => {
+                if (error) console.error("Failed to log user message:", error);
+            });
+        }
+
+        // 1. Enhanced System Prompt & FAQs
         const systemPrompt = `You are Dr. Priyanka's Intelligent Receptionist.
-        Your Goal: Help patients understand services and BOOK APPOINTMENTS autonomously.
+        Your Goal: Help patients understand services, answer FAQs, and BOOK APPOINTMENTS autonomously.
 
         Services: 
         - Therapeutic Yoga (60 mins)
@@ -53,8 +67,14 @@ export async function POST(req: Request) {
         - Diet Counselling (30 mins)
         - Massage (60 mins)
 
+        FAQs:
+        - "Do you take insurance?" -> "We currently do not accept direct insurance billing, but we can provide an invoice for you to submit."
+        - "What should I bring?" -> "Please bring any recent medical reports and wear comfortable clothing."
+        - "Where are you located?" -> "We are located at [Clinic Address, City]. We are open Mon-Sat 9AM-7PM."
+        - "Is Naturopathy safe?" -> "Yes, it is a non-invasive, drug-less system of medicine focusing on natural healing."
+        
         PROTOCOL:
-        1. Answer questions about health/services warmly.
+        1. Answer questions about health/services/FAQs warmly.
         2. If a user wants to book, you MUST ask for these details one by one if missing:
            - Patient Name
            - Service Name
@@ -77,7 +97,7 @@ export async function POST(req: Request) {
            }
            \`\`\`
            
-        4. If you lack details, continue chatting normally.
+        4. If you lack details, continue chatting normally. Do not output JSON until ready.
         `;
 
         // 2. Prioritized Free Models (Based on User Research - Agentic & High Performance)
@@ -86,8 +106,6 @@ export async function POST(req: Request) {
             "deepseek/deepseek-r1-0528",              // Tier 1: O1-level performance
             "google/gemma-3-27b-it",                  // Tier 2: Strong structured output (Instruction Tuned)
             "meta-llama/llama-3.3-70b-instruct:free", // Tier 2: Reliable fallback
-            "mistralai/devstral-2-2512",              // Tier 3: Agentic Coding specialist
-            "qwen/qwen-3-coder-480b-a35b-instruct"    // Tier 3: Massive MoE
         ];
 
         let completionResponse = null;
@@ -131,6 +149,7 @@ export async function POST(req: Request) {
         }
 
         let aiContent = completionResponse.content || "";
+        let actionMetadata = {};
 
         // 4. "Agentic" Action: Detect JSON Action
         // We use a broader regex to catch partial code blocks
@@ -149,6 +168,7 @@ export async function POST(req: Request) {
 
                     if (actionBlock.action === "BOOK_APPOINTMENT") {
                         const booking = actionBlock.data;
+                        actionMetadata = { action: "BOOK_APPOINTMENT", booking_data: booking };
 
                         // Find Service ID (Loose match)
                         const { data: serviceData } = await supabaseAdmin
@@ -159,7 +179,6 @@ export async function POST(req: Request) {
                             .maybeSingle();
 
                         // SANITIZATION: Clean up time format
-                        // Removes AM/PM, ensuring strict ISO compatibility for Supabase
                         let cleanTime = booking.time.toUpperCase().replace(/(AM|PM)/g, '').trim();
                         if (cleanTime.split(':').length === 1) cleanTime += ":00"; // Handle "10" -> "10:00"
                         if (cleanTime.length === 4) cleanTime = "0" + cleanTime; // Handle "9:00" -> "09:00"
@@ -179,8 +198,10 @@ export async function POST(req: Request) {
                         if (insertError) {
                             console.error("❌ Agent DB Write Failed:", insertError);
                             aiContent = `I attempted to book, but encountered an error. Please call us. (System Error: ${insertError.message})`;
+                            actionMetadata = { ...actionMetadata, success: false, error: insertError.message };
                         } else {
                             aiContent = `✅ **Appointment Confirmed!**\n\nI have successfully booked **${booking.service_name}** for **${booking.patient_name}** on **${booking.date} at ${booking.time}**.\n\nConfirmation sent to **${booking.phone}**.`;
+                            actionMetadata = { ...actionMetadata, success: true };
                         }
                     }
                 } catch (e) {
@@ -191,6 +212,20 @@ export async function POST(req: Request) {
         } else {
             // Cleanup any stray backticks just in case
             aiContent = aiContent.replace(/```json/g, "").replace(/```/g, "");
+        }
+
+        // 5. LOG ASSISTANT RESPONSE
+        if (supabaseAdmin && (userId || sessionId)) {
+            await supabaseAdmin.from('chat_logs').insert({
+                user_id: userId || null,
+                session_id: sessionId || 'unknown',
+                role: 'assistant',
+                content: aiContent,
+                metadata: {
+                    model: usedModel,
+                    ...actionMetadata
+                }
+            });
         }
 
         return NextResponse.json({ role: "assistant", content: aiContent });

@@ -118,8 +118,10 @@ export default function PatientsPage() {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     {/* In a fuller app, link to specific patient details */}
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2d5016] hover:bg-[#2d5016]/10" title="View Details">
-                                                        <FileText className="h-4 w-4" />
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2d5016] hover:bg-[#2d5016]/10" title="View Details" asChild>
+                                                        <Link href={`/admin/patients/${patient.id}`}>
+                                                            <FileText className="h-4 w-4" />
+                                                        </Link>
                                                     </Button>
                                                 </div>
                                             </td>

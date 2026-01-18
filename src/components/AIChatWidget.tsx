@@ -6,6 +6,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { MessageCircle, X, Send, Bot, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase"; // Ensure this matches user's project structure
+import { v4 as uuidv4 } from "uuid";
 
 type Message = {
     role: "user" | "assistant";
@@ -19,7 +21,46 @@ export default function AIChatWidget() {
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState<string>("");
+
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Initial Setup: Get User, Session, and History
+    useEffect(() => {
+        const initializeChat = async () => {
+            // 1. Get User
+            const { data: { user } } = await supabase.auth.getUser();
+            setUserId(user?.id || null);
+
+            // 2. Get/Set Session ID (for anonymous users)
+            let currentSessionId = localStorage.getItem("chat_session_id");
+            if (!currentSessionId) {
+                currentSessionId = uuidv4();
+                localStorage.setItem("chat_session_id", currentSessionId);
+            }
+            setSessionId(currentSessionId);
+
+            // 3. Load History
+            // We only look back 24 hours for relevance, or last 50 messages
+            const { data: history, error } = await supabase
+                .from('chat_logs')
+                .select('role, content')
+                .or(`user_id.eq.${user?.id},session_id.eq.${currentSessionId}`)
+                .order('created_at', { ascending: true })
+                .limit(50);
+
+            if (history && history.length > 0) {
+                // Determine if we need to add the welcome message (if history is empty or old)
+                // For simplicity, just append history. If history exists, we replace the default welcome msg? 
+                // A nice UX is keeping the welcome message if the last message was > 1 hour ago.
+                // For now, just load the history.
+                setMessages(history.map(h => ({ role: h.role as "user" | "assistant", content: h.content })));
+            }
+        };
+
+        initializeChat();
+    }, []);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -40,15 +81,18 @@ export default function AIChatWidget() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
+                    messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+                    userId: userId,
+                    sessionId: sessionId
                 }),
             });
 
-            if (!response.ok) throw new Error("Failed to correct AI");
+            if (!response.ok) throw new Error("Failed to connect to AI");
 
             const data = await response.json();
             setMessages(prev => [...prev, { role: "assistant", content: data.content }]);
         } catch (error) {
+            console.error("Chat Error:", error);
             setMessages(prev => [...prev, { role: "assistant", content: "I apologize, I am having trouble connecting right now. Please try again later." }]);
         } finally {
             setIsLoading(false);
@@ -144,9 +188,10 @@ export default function AIChatWidget() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setIsOpen(true)}
-                    className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white p-4 rounded-full shadow-lg flex items-center justify-center"
+                    className="bg-[#2d5016] hover:bg-[#2d5016]/90 text-white p-4 rounded-full shadow-lg flex items-center justify-center relative"
                 >
                     <MessageCircle className="w-6 h-6" />
+                    {/* Notification dot if user hasn't opened yet? Maybe later */}
                 </motion.button>
             )}
         </div>

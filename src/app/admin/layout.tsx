@@ -11,7 +11,8 @@ import {
     LogOut,
     Leaf,
     Stethoscope,
-    Receipt
+    Receipt,
+    Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ const sidebarLinks = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Appointments", href: "/admin/appointments", icon: Calendar },
     { name: "Patients", href: "/admin/patients", icon: Users },
+    { name: "Vitals Review", href: "/admin/vitals", icon: Activity },
     { name: "Services", href: "/admin/services", icon: Stethoscope },
     { name: "Invoices", href: "/admin/invoices", icon: Receipt },
     { name: "Settings", href: "/admin/settings", icon: Settings },
