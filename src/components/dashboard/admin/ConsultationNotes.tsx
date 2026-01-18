@@ -34,20 +34,23 @@ export function ConsultationNotes({ patientId, practitionerId }: ConsultationNot
                 finalPractitionerId = user?.id; // Assuming user is practitioner
             }
 
-            const { error } = await supabase
-                .from('consultation_notes')
-                .insert({
-                    patient_id: patientId,
-                    practitioner_id: finalPractitionerId,
-                    visit_date: new Date().toISOString().split('T')[0],
-                    subjective: soap.subjective,
-                    objective: soap.objective,
-                    assessment: soap.assessment,
-                    plan: soap.plan,
-                    private_notes: soap.private_notes
-                });
+            const response = await fetch('/api/admin/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientId,
+                    practitionerId: finalPractitionerId,
+                    soap,
+                    visitDate: new Date().toISOString().split('T')[0]
+                })
+            });
 
-            if (error) throw error;
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save note');
+            }
+
             alert("Consultation note saved successfully.");
             setSoap({ subjective: "", objective: "", assessment: "", plan: "", private_notes: "" }); // Reset
             // Ideally trigger refresh or callback here

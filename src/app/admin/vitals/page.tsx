@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Search, Filter, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,20 +17,15 @@ export default function VitalsReviewPage() {
 
     const fetchMetrics = async () => {
         setLoading(true);
-        // Join with profiles to get patient name
-        const { data, error } = await supabase
-            .from('health_metrics')
-            .select(`
-                *,
-                profiles (full_name, email)
-            `)
-            .order('recorded_at', { ascending: false })
-            .limit(50);
+        try {
+            const response = await fetch('/api/admin/vitals');
+            const data = await response.json();
 
-        if (data) {
-            setMetrics(data);
-        } else {
-            console.error(error);
+            if (response.ok && data.metrics) {
+                setMetrics(data.metrics);
+            }
+        } catch (error) {
+            console.error('Error fetching health metrics:', error);
         }
         setLoading(false);
     };

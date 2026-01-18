@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Phone, CheckCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,10 +23,19 @@ export default function NewAppointmentPage() {
     const [time, setTime] = useState("");
 
     useEffect(() => {
-        // Fetch Services for dropdown
+        // Fetch Services using server-side API
         const fetchServices = async () => {
-            const { data } = await supabase.from('services').select('id, name').eq('status', 'active');
-            if (data) setServices(data);
+            try {
+                const response = await fetch('/api/admin/services');
+                const data = await response.json();
+                if (response.ok && data.services) {
+                    // Filter active services
+                    const activeServices = data.services.filter((s: any) => s.status === 'active' || !s.status);
+                    setServices(activeServices);
+                }
+            } catch (error) {
+                console.error('Error fetching services:', error);
+            }
         };
         fetchServices();
     }, []);
@@ -36,21 +44,31 @@ export default function NewAppointmentPage() {
         e.preventDefault();
         setIsLoading(true);
 
-        const { error } = await supabase.from('appointments').insert({
-            patient_name: guestName,
-            patient_phone: guestPhone,
-            service_id: serviceId,
-            start_time: `${date}T${time}:00`,
-            end_time: `${date}T${time}:00`, // Placeholder duration
-            status: 'confirmed',
-            notes: 'Manual booking via Admin Panel'
-        });
+        try {
+            // Use server-side API to create appointment
+            const response = await fetch('/api/admin/appointments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patient_name: guestName,
+                    patient_phone: guestPhone,
+                    service_id: serviceId,
+                    start_time: `${date}T${time}:00`,
+                    end_time: `${date}T${time}:00`,
+                    status: 'confirmed',
+                    notes: 'Manual booking via Admin Panel'
+                })
+            });
 
-        if (error) {
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to create appointment');
+            }
+
+            router.push("/admin/appointments");
+        } catch (error: any) {
             alert("Failed to create appointment: " + error.message);
             setIsLoading(false);
-        } else {
-            router.push("/admin/appointments");
         }
     };
 

@@ -57,21 +57,19 @@ export default function HealthProfileForm() {
 
     const fetchHealthProfile = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data, error } = await supabase
-                .from('patient_health_records')
-                .select('*')
-                .eq('patient_id', user.id)
-                .single();
-
-            if (error && error.code !== 'PGRST116') {
-                console.error("Error fetching health profile:", error);
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
             }
 
-            if (data) {
-                setFormData(data);
+            const response = await fetch('/api/patient/health-profile', { headers });
+            const data = await response.json();
+
+            if (response.ok && data.profile) {
+                setFormData(data.profile);
+            } else if (!response.ok && response.status !== 401) {
+                console.error("Error fetching health profile:", data.error);
             }
         } catch (error) {
             console.error("Error:", error);
@@ -83,37 +81,28 @@ export default function HealthProfileForm() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("No user found");
-
-            // Check if record exists
-            const { data: existingRecord } = await supabase
-                .from('patient_health_records')
-                .select('id')
-                .eq('patient_id', user.id)
-                .single();
-
-            let error;
-            if (existingRecord) {
-                const { error: updateError } = await supabase
-                    .from('patient_health_records')
-                    .update({ ...formData, updated_at: new Date().toISOString() })
-                    .eq('patient_id', user.id);
-                error = updateError;
-            } else {
-                const { error: insertError } = await supabase
-                    .from('patient_health_records')
-                    .insert([{ ...formData, patient_id: user.id }]);
-                error = insertError;
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
             }
 
-            if (error) throw error;
-            // toast.success("Health profile updated successfully");
-            alert("Health profile updated successfully");
+            const response = await fetch('/api/patient/health-profile', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save profile');
+            }
+
+            alert("Health profile updated successfully!");
 
         } catch (error: any) {
             console.error("Error saving profile:", error);
-            // toast.error("Failed to save profile");
             alert("Failed to save profile: " + error.message);
         } finally {
             setIsSaving(false);

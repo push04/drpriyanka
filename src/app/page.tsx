@@ -41,10 +41,33 @@ const floatAnimation = {
 
 const rotatingWords = ["Body's Balance", "Inner Peace", "Natural Glow", "Vitality"];
 
+const defaultConditions = [
+  "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
+  "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
+  "General Ailments", "Acidity", "Weight Loss", "Obesity",
+  "Face Rejuvination", "General Health", "PCOD", "Diabetes", "Hypertension",
+  "Menstrual Disorder", "Thyroid", "Anxiety", "Stress", "Headache"
+];
+
 export default function Home() {
   const [index, setIndex] = useState(0);
+  const [conditions, setConditions] = useState<any[]>(defaultConditions);
 
   useEffect(() => {
+    const fetchConditions = async () => {
+      try {
+        const response = await fetch('/api/admin/conditions');
+        const data = await response.json();
+        if (response.ok && data.conditions && data.conditions.length > 0) {
+          setConditions(data.conditions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dynamic conditions", error);
+      }
+    };
+    fetchConditions();
+
+    // Rotating words interval
     const interval = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % rotatingWords.length);
     }, 3000);
@@ -56,8 +79,8 @@ export default function Home() {
       <Navbar />
 
       <main className="flex-grow pt-24">
-        {/* HERO SECTION - 2 Column Layout */}
-        <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-[#faf9f6]">
+        {/* HERO SECTION - 2 Column Layout - Optimized for Mobile */}
+        <section className="relative min-h-[auto] lg:min-h-[85vh] flex items-center overflow-hidden bg-[#faf9f6] py-12 lg:py-0">
           {/* Background Pattern */}
           <div className="absolute inset-0 z-0 opacity-5 pointer-events-none">
             <Image
@@ -74,14 +97,14 @@ export default function Home() {
               initial="hidden"
               animate="visible"
               variants={staggerContainer}
-              className="space-y-8 text-center lg:text-left order-2 lg:order-1"
+              className="space-y-6 md:space-y-8 text-center lg:text-left order-2 lg:order-1"
             >
               <motion.div variants={fadeIn} className="inline-flex items-center gap-2 rounded-full bg-[#2d5016]/10 px-4 py-1.5 text-sm font-bold text-[#2d5016] mx-auto lg:mx-0">
                 <Sparkles className="w-4 h-4" />
                 <span>Holistic Healing in Vadodara</span>
               </motion.div>
 
-              <motion.h1 variants={fadeIn} className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-[#1f2937] leading-[1.1] min-h-[160px]">
+              <motion.h1 variants={fadeIn} className="text-4xl md:text-5xl lg:text-7xl font-serif font-bold text-[#1f2937] leading-[1.1] min-h-[120px] md:min-h-[160px]">
                 Restore Your <br />
                 <AnimatePresence mode="wait">
                   <motion.span
@@ -97,15 +120,15 @@ export default function Home() {
                 </AnimatePresence>
               </motion.h1>
 
-              <motion.p variants={fadeIn} className="text-xl text-[#6b7280] max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <motion.p variants={fadeIn} className="text-lg md:text-xl text-[#6b7280] max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 Dr. Priyanka's Clinic offers authentic Naturopathy, Yoga, and Diet therapy to help you heal naturally and live consistently.
               </motion.p>
 
               <motion.div variants={fadeIn} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                <Button variant="default" size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_rgba(45,80,22,0.3)] hover:shadow-xl transition-all" asChild>
+                <Button variant="default" size="lg" className="h-12 md:h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_rgba(45,80,22,0.3)] hover:shadow-xl transition-all" asChild>
                   <Link href="/book">Book Consultation</Link>
                 </Button>
-                <Button variant="secondary" size="lg" className="h-14 px-8 text-lg rounded-full border-2 border-[#2d5016] text-[#2d5016] hover:bg-[#2d5016]/5" asChild>
+                <Button variant="secondary" size="lg" className="h-12 md:h-14 px-8 text-lg rounded-full border-2 border-[#2d5016] text-[#2d5016] hover:bg-[#2d5016]/5" asChild>
                   <Link href="/services">Explore Treatments</Link>
                 </Button>
               </motion.div>
@@ -122,84 +145,83 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Right Visual - Animated Floating Elements */}
+            {/* Right Visual - Animated Floating Elements - Now Visible on Mobile */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative h-[600px] hidden lg:block order-1 lg:order-2"
+              className="relative h-[350px] md:h-[500px] lg:h-[600px] block order-1 lg:order-2 w-full"
             >
-              {/* Breathing Aura Effect - Back Layer */}
+              {/* Breathing Aura Effect */}
               <motion.div
                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#9caf88]/20 rounded-full blur-3xl z-0"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[400px] lg:w-[500px] h-[300px] md:h-[400px] lg:h-[500px] bg-[#9caf88]/20 rounded-full blur-3xl z-0"
               />
 
-              {/* Static Organic Blob Wrapper (No Rotation) */}
-              <div className="absolute top-10 right-10 w-[450px] h-[550px] z-10 flex items-center justify-center">
+              {/* Static Organic Blob Wrapper */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] md:w-[350px] lg:w-[450px] h-[340px] md:h-[420px] lg:h-[550px] z-10 flex items-center justify-center">
                 <div className="relative w-full h-full rounded-[40%_60%_70%_30%/40%_50%_60%_50%] overflow-hidden shadow-2xl border-4 border-white bg-white">
                   <Image
                     src="https://cdnl.iconscout.com/lottie/premium/thumb/meditation-animation-gif-download-3570065.gif"
                     alt="Woman Meditating Animation"
                     fill
                     className="object-cover scale-110"
-                    unoptimized // Essential for external GIFs to play correctly
+                    unoptimized
                     priority
                   />
                 </div>
               </div>
 
-              {/* Floating Leaves Animation - Kept subtle */}
+              {/* Floating Leaves Animation */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute top-20 left-20 z-20 bg-white p-3 rounded-full shadow-lg"
+                className="absolute top-10 md:top-20 left-10 md:left-20 z-20 bg-white p-2 md:p-3 rounded-full shadow-lg"
               >
-                <Leaf className="w-8 h-8 text-[#2d5016]" />
+                <Leaf className="w-6 h-6 md:w-8 md:h-8 text-[#2d5016]" />
               </motion.div>
 
               <motion.div
                 animate={{ y: [0, 15, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute bottom-40 right-10 z-20 bg-white p-4 rounded-full shadow-lg"
+                className="absolute bottom-20 md:bottom-40 right-4 md:right-10 z-20 bg-white p-3 md:p-4 rounded-full shadow-lg"
               >
-                <Sparkles className="w-6 h-6 text-[#e07a5f]" />
+                <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#e07a5f]" />
               </motion.div>
-
-
             </motion.div>
           </div>
         </section>
 
 
-
         {/* CONDITIONS WE TREAT */}
-        <section className="py-20 bg-[#faf9f6]">
+        <section className="py-16 md:py-20 bg-[#faf9f6]">
           <div className="container mx-auto px-6 md:px-16 lg:px-32">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
-              <p className="text-[#6b7280] max-w-2xl mx-auto">
+            <div className="text-center mb-10 md:mb-12">
+              <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
+              <p className="text-[#6b7280] max-w-2xl mx-auto text-sm md:text-base">
                 Specialized natural treatments for a wide range of chronic and acute ailments.
               </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-3">
-              {[
-                "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
-                "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
-                "General Ailments", "Acidity", "Weight Loss", "Obesity",
-                "Face Rejuvination", "General Health", "PCOD", "Diabetes", "Hypertension",
-                "Menstrual Disorder", "Thyroid", "Anxiety", "Stress", "Headache"
-              ].map((condition, idx) => (
-                <Link
-                  key={idx}
-                  href={`/services?q=${encodeURIComponent(condition)}`}
-                  className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-6 py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-pointer font-medium"
-                >
-                  {condition}
-                </Link>
-              ))}
+              {conditions.map((condition, idx) => {
+                const isObject = typeof condition === 'object';
+                const name = isObject ? condition.name : condition;
+                const linkHref = isObject && condition.service_id
+                  ? `/services/${condition.service_id}`
+                  : `/services?q=${encodeURIComponent(name)}`;
+
+                return (
+                  <Link
+                    key={idx}
+                    href={linkHref}
+                    className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-5 py-2 md:px-6 md:py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-pointer font-medium text-sm md:text-base"
+                  >
+                    {name}
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>

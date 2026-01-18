@@ -2,11 +2,27 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 
+import { cookies } from 'next/headers';
+
 // Initialize Supabase Admin Client for database writes
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+async function getAuthenticatedUser(req: Request) {
+    try {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+            if (user && !error) return user;
+        }
+        return null;
+    } catch (error) {
+        return null;
+    }
+}
 
 export async function POST(req: Request) {
     try {
@@ -26,7 +42,14 @@ export async function POST(req: Request) {
 
         // Check if user exists to link profile
         let patientId = null;
-        if (email) {
+
+        // 1. Try secure auth first
+        const user = await getAuthenticatedUser(req);
+        if (user) {
+            patientId = user.id;
+        }
+        // 2. Fallback to email match (if unauthenticated booking allowed)
+        else if (email) {
             const { data: profile } = await supabaseAdmin
                 .from('profiles')
                 .select('id')

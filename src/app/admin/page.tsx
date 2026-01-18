@@ -6,7 +6,6 @@ import { Users, Calendar, DollarSign, Activity, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState([
@@ -24,56 +23,21 @@ export default function AdminDashboardPage() {
 
     const fetchDashboardData = async () => {
         try {
-            // 1. Get Today's Appointments Count
-            const today = new Date().toISOString().split('T')[0];
-            const { count: todayCount } = await supabase
-                .from('appointments')
-                .select('*', { count: 'exact', head: true })
-                .gte('start_time', `${today}T00:00:00`)
-                .lte('start_time', `${today}T23:59:59`);
+            // Use server-side API to bypass RLS
+            const response = await fetch('/api/admin/dashboard');
+            const data = await response.json();
 
-            // 2. Get Total Patients Count
-            const { count: patientCount } = await supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'patient');
-
-            // 3. Get Pending Requests Count
-            const { count: pendingCount } = await supabase
-                .from('appointments')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'pending');
-
-            // 4. Get Recent Appointments with Joins
-            const { data: recentData, error } = await supabase
-                .from('appointments')
-                .select(`
-                    id, 
-                    start_time, 
-                    status, 
-                    profiles (full_name),
-                    services (name)
-                `)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
-            if (error) throw error;
-
-            const formattedRecent = recentData ? recentData.map((apt: any) => ({
-                id: apt.id,
-                patient: apt.profiles?.full_name || "Unknown Patient",
-                service: apt.services?.name || "Service",
-                time: new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                status: apt.status
-            })) : [];
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to fetch dashboard data');
+            }
 
             setStats([
-                { label: "Today's Appointments", value: todayCount?.toString() || "0", icon: Calendar, change: "Today" },
-                { label: "Total Patients", value: patientCount?.toString() || "0", icon: Users, change: "All time" },
-                { label: "Revenue (Est.)", value: "₹--", icon: DollarSign, change: "Not connected" },
-                { label: "Pending Requests", value: pendingCount?.toString() || "0", icon: Activity, change: "Action needed" },
+                { label: "Today's Appointments", value: data.stats.todayAppointments.toString(), icon: Calendar, change: "Today" },
+                { label: "Total Patients", value: data.stats.totalPatients.toString(), icon: Users, change: "All time" },
+                { label: "Revenue (Est.)", value: `₹${data.stats.revenue.toLocaleString()}`, icon: DollarSign, change: "From completed" },
+                { label: "Pending Requests", value: data.stats.pendingRequests.toString(), icon: Activity, change: "Action needed" },
             ]);
-            setRecentAppointments(formattedRecent);
+            setRecentAppointments(data.recentAppointments || []);
 
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
@@ -132,7 +96,10 @@ export default function AdminDashboardPage() {
                                 recentAppointments.map((apt) => (
                                     <div key={apt.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/10">
                                         <div className="flex items-center gap-4">
-                                            <div className="font-bold text-lg w-20">{apt.time}</div>
+                                            <div className="font-bold text-sm w-24 text-center">
+                                                <div className="text-muted-foreground text-xs">{apt.date}</div>
+                                                <div>{apt.time}</div>
+                                            </div>
                                             <div>
                                                 <div className="font-medium">{apt.patient}</div>
                                                 <div className="text-sm text-muted-foreground">{apt.service}</div>
@@ -161,6 +128,9 @@ export default function AdminDashboardPage() {
                         </Button>
                         <Button className="w-full border border-input p-3 rounded-md hover:bg-accent transition-colors h-auto justify-start" variant="outline" asChild>
                             <Link href="/admin/patients">View Patient Registry</Link>
+                        </Button>
+                        <Button className="w-full border border-input p-3 rounded-md hover:bg-accent transition-colors h-auto justify-start" variant="outline" asChild>
+                            <Link href="/admin/reports">Generate Reports (AI)</Link>
                         </Button>
                         <Button className="w-full border border-input p-3 rounded-md hover:bg-accent transition-colors h-auto justify-start" variant="outline" asChild>
                             <Link href="/admin/settings">Manage Settings</Link>

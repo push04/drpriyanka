@@ -21,19 +21,30 @@ export default function PatientDashboard() {
             if (!user) return;
 
             try {
-                // Fetch upcoming appointments
-                const { data: apts, error: aptError } = await supabase
-                    .from('appointments')
-                    .select('*, services(name, duration)')
-                    .eq('patient_id', user.id)
-                    .gte('appointment_date', new Date().toISOString().split('T')[0])
-                    .order('appointment_date', { ascending: true })
-                    .limit(2);
+                // Fetch upcoming appointments from patient API (bypasses RLS)
+                const { data: { session } } = await supabase.auth.getSession();
+                const headers: HeadersInit = {};
+                if (session?.access_token) {
+                    headers['Authorization'] = `Bearer ${session.access_token}`;
+                }
 
-                if (aptError) console.error("Error fetching appointments:", aptError);
-                else setAppointments(apts || []);
+                const response = await fetch('/api/patient/appointments', { headers });
+                const data = await response.json();
 
-                // Fetch latest vitals
+                if (response.ok && data.appointments) {
+                    // Filter for upcoming appointments only and limit to 2
+                    const now = new Date();
+                    const upcomingApts = data.appointments
+                        .filter((apt: any) => new Date(apt.start_time) >= now && apt.status !== 'cancelled')
+                        .slice(0, 2);
+                    setAppointments(upcomingApts);
+                } else {
+                    console.error("Error fetching appointments:", data.error);
+                    // Safe fallback to empty
+                    setAppointments([]);
+                }
+
+                // Fetch latest vitals (keeping direct Supabase call for now)
                 const { data: vital, error: vitalError } = await supabase
                     .from('health_metrics')
                     .select('*')
@@ -89,10 +100,10 @@ export default function PatientDashboard() {
                         {nextAppointment ? (
                             <>
                                 <div className="text-xl font-bold">
-                                    {format(new Date(nextAppointment.appointment_date + 'T' + nextAppointment.appointment_time), 'MMM d, h:mm a')}
+                                    {format(new Date(nextAppointment.start_time), 'MMM d, h:mm a')}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    {nextAppointment.services?.name || "Consultation"}
+                                    {nextAppointment.service_name || "Consultation"}
                                 </p>
                             </>
                         ) : (
@@ -151,16 +162,16 @@ export default function PatientDashboard() {
                                     <div key={apt.id} className="flex items-center gap-4 p-4 border rounded-lg border-l-4 border-l-[#2d5016] bg-[#f9f9f9]">
                                         <div className="text-center min-w-[60px]">
                                             <div className="text-xs font-bold text-muted-foreground uppercase">
-                                                {format(new Date(apt.appointment_date), 'MMM')}
+                                                {format(new Date(apt.start_time), 'MMM')}
                                             </div>
                                             <div className="text-xl font-bold">
-                                                {format(new Date(apt.appointment_date), 'd')}
+                                                {format(new Date(apt.start_time), 'd')}
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="font-bold">{apt.services?.name || "Consultation"}</div>
+                                            <div className="font-bold">{apt.service_name || "Consultation"}</div>
                                             <div className="text-sm text-muted-foreground">
-                                                {format(new Date(`2000-01-01T${apt.appointment_time}`), 'h:mm a')} • {apt.services?.duration || "30 min"}
+                                                {format(new Date(apt.start_time), 'h:mm a')} • {apt.duration || "60 min"}
                                             </div>
                                         </div>
                                     </div>
@@ -187,12 +198,38 @@ export default function PatientDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {/* Placeholder for now as documents table is usually empty in fresh setup */}
-                            <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
-                                <FileText className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                                <p>No documents uploaded yet.</p>
-                            </div>
-                            <Button variant="outline" className="w-full">View All Records</Button>
+                            {appointments.filter(a => a.status === 'completed').length > 0 ? (
+                                appointments
+                                    .filter(a => a.status === 'completed')
+                                    .slice(0, 3)
+                                    .map(doc => (
+                                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-[#2d5016]/10 p-2 rounded-lg">
+                                                    <FileText className="h-5 w-5 text-[#2d5016]" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-sm">Medical Report</div>
+                                                    <div className="text-xs text-muted-foreground">{format(new Date(doc.start_time), 'MMM d, yyyy')}</div>
+                                                </div>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                <Link href="/patient-dashboard/medical-records">
+                                                    <FileText className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    ))
+                            ) : (
+                                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                                    <FileText className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                                    <p>No documents available yet.</p>
+                                    <p className="text-xs mt-1">Reports appear after consultations.</p>
+                                </div>
+                            )}
+                            <Button variant="outline" className="w-full" asChild>
+                                <Link href="/patient-dashboard/medical-records">View All Records</Link>
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>

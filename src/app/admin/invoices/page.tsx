@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
 
 export default function InvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -20,32 +19,38 @@ export default function InvoicesPage() {
 
     const fetchInvoices = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
-            .from('invoices')
-            .select('*')
-            .order('issued_date', { ascending: false });
+        try {
+            const response = await fetch('/api/admin/invoices');
+            const data = await response.json();
 
-        if (data) {
-            setInvoices(data);
-
-            // Calculate Stats
-            const revenue = data.filter(i => i.status === 'paid').reduce((sum, i) => sum + Number(i.amount), 0);
-            const pending = data.filter(i => i.status === 'pending').reduce((sum, i) => sum + Number(i.amount), 0);
-            setStats({ revenue, pending, count: data.length });
+            if (response.ok) {
+                setInvoices(data.invoices || []);
+                setStats(data.stats || { revenue: 0, pending: 0, count: 0 });
+            }
+        } catch (error) {
+            console.error('Error fetching invoices:', error);
         }
         setIsLoading(false);
     };
 
     // Helper to Create a Demo Invoice (Since we don't have a full UI for it yet)
     const createDemoInvoice = async () => {
-        const { error } = await supabase.from('invoices').insert({
-            patient_name: "Fresh Demo Patient",
-            service_name: "General Checkup",
-            amount: 1500,
-            status: "pending",
-            issued_date: new Date().toISOString().split('T')[0]
-        });
-        if (!error) fetchInvoices();
+        try {
+            const response = await fetch('/api/admin/invoices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patient_name: "Fresh Demo Patient",
+                    service_name: "General Checkup",
+                    amount: 1500,
+                    status: "pending",
+                    issued_date: new Date().toISOString().split('T')[0]
+                })
+            });
+            if (response.ok) fetchInvoices();
+        } catch (error) {
+            console.error('Error creating invoice:', error);
+        }
     };
 
     const filteredInvoices = invoices.filter(inv =>

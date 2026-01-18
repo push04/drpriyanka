@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, FileText, Calendar, Activity, Pill, Loader2 } from "lucide-react";
@@ -23,32 +22,19 @@ export default function PatientDetailPage() {
             if (!id) return;
             setLoading(true);
 
-            // 1. Fetch Profile
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', id)
-                .single();
+            try {
+                const response = await fetch(`/api/admin/patients/${id}`);
+                const data = await response.json();
 
-            // 2. Fetch Health Record (if exists)
-            const { data: health } = await supabase
-                .from('patient_health_records')
-                .select('*')
-                .eq('patient_id', id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
+                if (response.ok) {
+                    setPatient(data.patient);
+                    setHealthRecord(data.healthRecord);
+                    setAppointments(data.appointments || []);
+                }
+            } catch (error) {
+                console.error('Error fetching patient data:', error);
+            }
 
-            // 3. Fetch Appointments
-            const { data: appts } = await supabase
-                .from('appointments')
-                .select('*, services(name)')
-                .eq('patient_id', id)
-                .order('start_time', { ascending: false });
-
-            setPatient(profile);
-            setHealthRecord(health);
-            setAppointments(appts || []);
             setLoading(false);
         };
 

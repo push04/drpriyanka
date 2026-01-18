@@ -22,32 +22,30 @@ export default function AdminLoginPage() {
         setError("");
 
         try {
-            // Allow "admin" username by appending domain
-            const loginEmail = email.toLowerCase() === 'admin' ? 'admin@drpriyanka.com' : email;
-
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: loginEmail,
-                password,
+            // Use server-side API for admin authentication (bypasses RLS issues)
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
             });
 
-            if (error) throw error;
+            const data = await response.json();
 
-            if (data.session) {
-                // Verify Admin Role
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', data.session.user.id)
-                    .single();
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
 
-                if (profile?.role !== 'admin') {
-                    // Sign out if not admin
-                    await supabase.auth.signOut();
-                    throw new Error("Unauthorized: Access restricted to administrators.");
-                }
+            if (data.success && data.session) {
+                // Set session in Supabase client for subsequent requests
+                await supabase.auth.setSession({
+                    access_token: data.session.access_token,
+                    refresh_token: data.session.refresh_token
+                });
 
-                // Success
+                // Mark admin session
                 localStorage.setItem("admin_session", "true");
+                localStorage.setItem("admin_name", data.session.user.name);
+
                 router.push("/admin");
             }
         } catch (err: any) {

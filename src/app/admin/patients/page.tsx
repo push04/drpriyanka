@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/lib/supabase";
 
 export default function PatientsPage() {
     const [patients, setPatients] = useState<any[]>([]);
@@ -16,23 +15,15 @@ export default function PatientsPage() {
     useEffect(() => {
         const fetchPatients = async () => {
             setIsLoading(true);
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('role', 'patient')
-                .order('created_at', { ascending: false });
+            try {
+                const response = await fetch('/api/admin/patients');
+                const data = await response.json();
 
-            if (data) {
-                // Determine status (simple logic for now)
-                const formatted = data.map(p => ({
-                    id: p.id,
-                    name: p.full_name || "Unknown",
-                    email: p.email,
-                    phone: p.phone || "N/A",
-                    status: 'Active', // Default to active for now
-                    joined: new Date(p.created_at).toLocaleDateString()
-                }));
-                setPatients(formatted);
+                if (response.ok && data.patients) {
+                    setPatients(data.patients);
+                }
+            } catch (error) {
+                console.error('Error fetching patients:', error);
             }
             setIsLoading(false);
         };

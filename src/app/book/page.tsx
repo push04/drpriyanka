@@ -1,25 +1,40 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, Loader2 } from "lucide-react";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { services } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link"; // Ensure Link is imported
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+
+// Service type for database services
+interface Service {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    duration: string;
+    category?: string;
+    status?: string;
+}
 
 function BookingForm() {
     const searchParams = useSearchParams();
     const preSelectedServiceId = searchParams.get("service");
-    const { user, isLoading } = useAuth(); // Auth Hook
+    const { user, isLoading } = useAuth();
+
+    // Services from database
+    const [services, setServices] = useState<Service[]>([]);
+    const [servicesLoading, setServicesLoading] = useState(true);
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -29,12 +44,34 @@ function BookingForm() {
         name: "",
         email: "",
         phone: "",
-        recurrence: "none", // 'none', 'weekly', 'monthly'
+        recurrence: "none",
         sessions: 1
     });
 
+    // Fetch services from database
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const response = await fetch('/api/admin/services');
+                const data = await response.json();
+                if (response.ok && data.services) {
+                    // Filter active services only
+                    const activeServices = data.services.filter((s: Service) =>
+                        s.status === 'active' || !s.status
+                    );
+                    setServices(activeServices);
+                }
+            } catch (error) {
+                console.error('Error fetching services:', error);
+            } finally {
+                setServicesLoading(false);
+            }
+        };
+        fetchServices();
+    }, []);
+
     // Auto-fill user details when authenticated
-    useState(() => {
+    useEffect(() => {
         if (user) {
             setFormData(prev => ({
                 ...prev,
@@ -42,13 +79,12 @@ function BookingForm() {
                 email: user.email || ""
             }));
         }
-    });
+    }, [user]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [isWaitlist, setIsWaitlist] = useState(false);
 
-    const selectedService = services.find(s => s.id === formData.serviceId);
+    const selectedService = services.find((s: Service) => s.id === formData.serviceId);
 
     const handleNext = () => setStep(prev => prev + 1);
     const handleBack = () => setStep(prev => prev - 1);
@@ -57,16 +93,17 @@ function BookingForm() {
         e.preventDefault();
         setIsSubmitting(true);
 
-        const endpoint = isWaitlist ? '/api/waitlist/join' : '/api/appointments/book';
-        const payload = isWaitlist
-            ? { ...formData, preferredDate: formData.date, notes: `Waitlist for ${selectedService?.name}` }
-            : formData;
-
         try {
-            const response = await fetch(endpoint, {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+
+            const response = await fetch('/api/appointments/book', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers,
+                body: JSON.stringify(formData)
             });
 
             const data = await response.json();
@@ -94,7 +131,7 @@ function BookingForm() {
         return (
             <Card className="max-w-md mx-auto p-8 text-center shadow-lg border-t-4 border-t-[#2d5016]">
                 <div className="bg-[#2d5016]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Check className="w-8 h-8 text-[#2d5016]" /> {/* Reusing Check icon for visual consistency, or could use Lock/User */}
+                    <Check className="w-8 h-8 text-[#2d5016]" />
                 </div>
                 <h2 className="text-2xl font-serif font-bold text-[#2d5016] mb-3">Login Required</h2>
                 <p className="text-muted-foreground mb-8">
@@ -119,20 +156,25 @@ function BookingForm() {
                     <Check className="w-10 h-10" />
                 </div>
                 <h2 className="text-3xl font-serif font-bold text-primary mb-4">
-                    {isWaitlist ? "Added to Waitlist!" : "Booking Confirmed!"}
+                    Booking Confirmed!
                 </h2>
                 <p className="text-muted-foreground mb-8">
-                    {isWaitlist
-                        ? `We have added you to the waitlist for ${selectedService?.name}. We will notify you at ${formData.email} when a slot becomes available.`
-                        : `Thank you ${formData.name}. We have sent a confirmation email to ${formData.email}.`
-                    }
-                    {!isWaitlist && formData.recurrence !== 'none' && (
+                    Thank you {formData.name}. We have sent a confirmation email to {formData.email}.
+                    {formData.recurrence !== 'none' && (
                         <span className="block mt-2 font-medium">This is a persistent {formData.recurrence} booking for {formData.sessions} sessions.</span>
                     )}
                 </p>
-                <Button asChild>
-                    <Link href="/patient-dashboard">Go to Dashboard</Link>
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button asChild size="lg" className="bg-[#2d5016]">
+                        <Link href="/patient-dashboard/profile">Complete Health Profile</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="lg">
+                        <Link href="/patient-dashboard">Go to Dashboard</Link>
+                    </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 max-w-sm mx-auto">
+                    Filling out your health profile now helps Dr. Priyanka prepare for your session effectively.
+                </p>
             </div>
         );
     }
@@ -165,21 +207,32 @@ function BookingForm() {
                             exit={{ opacity: 0, x: -20 }}
                         >
                             <h2 className="text-2xl font-serif font-bold mb-6">Select a Service</h2>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                {services.map((service) => (
-                                    <div
-                                        key={service.id}
-                                        onClick={() => setFormData({ ...formData, serviceId: service.id })}
-                                        className={cn(
-                                            "cursor-pointer border rounded-lg p-4 transition-all hover:border-primary",
-                                            formData.serviceId === service.id ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
-                                        )}
-                                    >
-                                        <div className="font-bold">{service.name}</div>
-                                        <div className="text-sm text-muted-foreground">{service.duration} • ₹{service.price}</div>
-                                    </div>
-                                ))}
-                            </div>
+                            {servicesLoading ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : services.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <p>No services available at the moment.</p>
+                                    <p className="text-sm mt-2">Please contact the clinic directly.</p>
+                                </div>
+                            ) : (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {services.map((service: Service) => (
+                                        <div
+                                            key={service.id}
+                                            onClick={() => setFormData({ ...formData, serviceId: service.id })}
+                                            className={cn(
+                                                "cursor-pointer border rounded-lg p-4 transition-all hover:border-primary",
+                                                formData.serviceId === service.id ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
+                                            )}
+                                        >
+                                            <div className="font-bold">{service.name}</div>
+                                            <div className="text-sm text-muted-foreground">{service.duration} • ₹{service.price}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <div className="mt-8 flex justify-end">
                                 <Button onClick={handleNext} disabled={!formData.serviceId}>
                                     Next Step <ChevronRight className="w-4 h-4 ml-1" />
@@ -204,6 +257,7 @@ function BookingForm() {
                                         className="w-full"
                                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                         value={formData.date}
+                                        min={new Date().toISOString().split('T')[0]}
                                     />
                                 </div>
                                 <div className="space-y-4">
@@ -253,22 +307,10 @@ function BookingForm() {
                                         </p>
                                     )}
                                 </div>
-                                <div className="mt-4 text-center">
-                                    <button
-                                        onClick={() => {
-                                            setIsWaitlist(true);
-                                            // Pre-fill date if selected, else just move next
-                                            handleNext();
-                                        }}
-                                        className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-                                    >
-                                        Can't find a suitable time? Join our Waitlist
-                                    </button>
-                                </div>
                             </div>
                             <div className="mt-8 flex justify-between">
                                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                                <Button onClick={() => { setIsWaitlist(false); handleNext(); }} disabled={!formData.date || !formData.time}>
+                                <Button onClick={handleNext} disabled={!formData.date || !formData.time}>
                                     Next Step <ChevronRight className="w-4 h-4 ml-1" />
                                 </Button>
                             </div>
@@ -282,9 +324,7 @@ function BookingForm() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                         >
-                            <h2 className="text-2xl font-serif font-bold mb-6">
-                                {isWaitlist ? "Join Waitlist" : "Your Details"}
-                            </h2>
+                            <h2 className="text-2xl font-serif font-bold mb-6">Your Details</h2>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -293,7 +333,7 @@ function BookingForm() {
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            readOnly={!!user} // Locked if coming from auth
+                                            readOnly={!!user}
                                             className={user ? "bg-muted/50" : ""}
                                         />
                                     </div>
@@ -313,7 +353,7 @@ function BookingForm() {
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        readOnly={!!user} // Locked if coming from auth
+                                        readOnly={!!user}
                                         className={user ? "bg-muted/50" : ""}
                                     />
                                 </div>
@@ -343,7 +383,7 @@ function BookingForm() {
                                 <div className="mt-8 flex justify-between">
                                     <Button type="button" variant="outline" onClick={handleBack}>Back</Button>
                                     <Button type="submit" size="lg" disabled={isSubmitting}>
-                                        {isSubmitting ? "Processing..." : (isWaitlist ? "Join Waitlist" : "Confirm Booking")}
+                                        {isSubmitting ? "Processing..." : "Confirm Booking"}
                                     </Button>
                                 </div>
                             </form>

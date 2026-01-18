@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
 
 export default function ServicesPage() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -20,22 +19,30 @@ export default function ServicesPage() {
 
     const fetchServices = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
-            .from('services')
-            .select('*')
-            .order('created_at', { ascending: false });
+        try {
+            const response = await fetch('/api/admin/services');
+            const data = await response.json();
 
-        if (data) setServices(data);
-        if (error) console.error("Error fetching services:", error);
+            if (response.ok && data.services) {
+                setServices(data.services);
+            }
+        } catch (error) {
+            console.error("Error fetching services:", error);
+        }
         setIsLoading(false);
     };
 
     const handleDelete = async (id: string) => {
         if (confirm("Are you sure you want to delete this service? This action cannot be undone.")) {
-            const { error } = await supabase.from('services').delete().match({ id });
-            if (!error) {
-                setServices(services.filter(s => s.id !== id));
-            } else {
+            try {
+                const response = await fetch(`/api/admin/services?id=${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    setServices(services.filter(s => s.id !== id));
+                } else {
+                    alert("Failed to delete service.");
+                }
+            } catch (error) {
+                console.error("Error deleting service:", error);
                 alert("Failed to delete service.");
             }
         }

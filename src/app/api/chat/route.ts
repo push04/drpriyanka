@@ -183,14 +183,45 @@ export async function POST(req: Request) {
                         if (cleanTime.split(':').length === 1) cleanTime += ":00"; // Handle "10" -> "10:00"
                         if (cleanTime.length === 4) cleanTime = "0" + cleanTime; // Handle "9:00" -> "09:00"
 
+                        // SANITIZATION: Parse natural language dates
+                        let cleanDate = booking.date;
+                        const today = new Date();
+                        const dateLower = booking.date.toLowerCase().trim();
+
+                        if (dateLower === 'today') {
+                            cleanDate = today.toISOString().split('T')[0];
+                        } else if (dateLower === 'tomorrow') {
+                            const tomorrow = new Date(today);
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            cleanDate = tomorrow.toISOString().split('T')[0];
+                        } else if (dateLower.includes('next')) {
+                            // Handle "next week", "next monday", etc - default to 7 days from now
+                            const nextWeek = new Date(today);
+                            nextWeek.setDate(nextWeek.getDate() + 7);
+                            cleanDate = nextWeek.toISOString().split('T')[0];
+                        } else if (!/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
+                            // Try to parse other date formats
+                            const parsed = new Date(booking.date);
+                            if (!isNaN(parsed.getTime())) {
+                                cleanDate = parsed.toISOString().split('T')[0];
+                            } else {
+                                // Default to tomorrow if unparseable
+                                const tomorrow = new Date(today);
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                cleanDate = tomorrow.toISOString().split('T')[0];
+                            }
+                        }
+
+                        console.log(`📅 Booking Date Parsed: "${booking.date}" -> "${cleanDate}"`);
+
                         const { error: insertError } = await supabaseAdmin
                             .from('appointments')
                             .insert({
                                 patient_name: booking.patient_name,
                                 patient_phone: booking.phone,
                                 service_id: serviceData?.id || null,
-                                start_time: `${booking.date}T${cleanTime}:00`,
-                                end_time: `${booking.date}T${cleanTime}:00`,
+                                start_time: `${cleanDate}T${cleanTime}:00`,
+                                end_time: `${cleanDate}T${cleanTime}:00`,
                                 status: 'confirmed',
                                 notes: `Booked by AI Agent (${usedModel})`
                             });

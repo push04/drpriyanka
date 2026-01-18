@@ -1,9 +1,53 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Leaf, Facebook, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
+import { Leaf, Facebook, Instagram, Youtube, Mail, MapPin, Phone, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function Footer() {
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+    const [message, setMessage] = useState("");
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!email.trim()) {
+            setStatus("error");
+            setMessage("Please enter your email address");
+            return;
+        }
+
+        setIsLoading(true);
+        setStatus("idle");
+
+        try {
+            const response = await fetch('/api/newsletter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Subscription failed');
+            }
+
+            setStatus("success");
+            setMessage("Thank you for subscribing!");
+            setEmail("");
+        } catch (error: any) {
+            setStatus("error");
+            setMessage(error.message || "Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <footer className="bg-[#2d5016] text-white pt-16 pb-8">
             <div className="container mx-auto px-6 md:px-16 lg:px-32">
@@ -75,10 +119,40 @@ export function Footer() {
                         <p className="text-sm text-white/70 mb-4">
                             Subscribe to our newsletter for health tips and clinic updates.
                         </p>
-                        <div className="flex flex-col gap-2">
-                            <Input placeholder="Enter your email" className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-offset-0 focus-visible:ring-white" />
-                            <Button className="bg-[#e07a5f] hover:bg-[#e07a5f]/90 text-white border-none">Subscribe</Button>
-                        </div>
+                        <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
+                            <Input
+                                placeholder="Enter your email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                disabled={isLoading}
+                                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-offset-0 focus-visible:ring-white"
+                            />
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="bg-[#e07a5f] hover:bg-[#e07a5f]/90 text-white border-none"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Subscribing...
+                                    </>
+                                ) : "Subscribe"}
+                            </Button>
+                            {status === "success" && (
+                                <div className="flex items-center gap-2 text-green-300 text-sm mt-1">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>{message}</span>
+                                </div>
+                            )}
+                            {status === "error" && (
+                                <div className="flex items-center gap-2 text-red-300 text-sm mt-1">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span>{message}</span>
+                                </div>
+                            )}
+                        </form>
                     </div>
                 </div>
 
@@ -93,3 +167,4 @@ export function Footer() {
         </footer>
     );
 }
+
