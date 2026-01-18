@@ -172,144 +172,143 @@ export default function Home() {
           </div>
         </section>
 
-    </div>
-        </section >
 
-    {/* CONDITIONS WE TREAT */ }
-    < section className = "py-20 bg-[#faf9f6]" >
-      <div className="container mx-auto px-6 md:px-12 lg:px-24">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
-          <p className="text-[#6b7280] max-w-2xl mx-auto">
-            Specialized natural treatments for a wide range of chronic and acute ailments.
-          </p>
-        </div>
 
-        <div className="flex flex-wrap justify-center gap-3">
-          {[
-            "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
-            "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
-            "General Ailments", "Acidity", "Weight Loss", "Obesity",
-            "Face Rejuvination", "General Health"
-          ].map((condition, idx) => (
-            <div key={idx} className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-6 py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-default font-medium">
-              {condition}
+        {/* CONDITIONS WE TREAT */}
+        < section className="py-20 bg-[#faf9f6]" >
+          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-serif font-bold text-[#2d5016] mb-4">Conditions We Treat</h2>
+              <p className="text-[#6b7280] max-w-2xl mx-auto">
+                Specialized natural treatments for a wide range of chronic and acute ailments.
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
+
+            <div className="flex flex-wrap justify-center gap-3">
+              {[
+                "Sinusitis", "Asthma", "Cervical Spondylitis", "Back Pain",
+                "Knee Pain", "Frozen Shoulder", "Skin Treatment", "Boost Immunity",
+                "General Ailments", "Acidity", "Weight Loss", "Obesity",
+                "Face Rejuvination", "General Health"
+              ].map((condition, idx) => (
+                <div key={idx} className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-6 py-3 rounded-full shadow-sm hover:shadow-md hover:bg-[#2d5016] hover:text-white transition-all cursor-default font-medium">
+                  {condition}
+                </div>
+              ))}
+            </div>
+          </div>
         </section >
 
-    {/* SERVICES PREVIEW */ }
-    < section className = "py-24 bg-white" >
-      <div className="container mx-auto px-6 md:px-12 lg:px-24">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl font-serif font-bold text-[#2d5016]">Our Core Therapies</h2>
-          <p className="text-[#6b7280] max-w-2xl mx-auto">
-            Comprehensive range of natural treatments designed to restore harmony.
-          </p>
-        </div>
+        {/* SERVICES PREVIEW */}
+        < section className="py-24 bg-white" >
+          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-4xl font-serif font-bold text-[#2d5016]">Our Core Therapies</h2>
+              <p className="text-[#6b7280] max-w-2xl mx-auto">
+                Comprehensive range of natural treatments designed to restore harmony.
+              </p>
+            </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-8"
-        >
-          {services.slice(0, 3).map((service) => (
-            <motion.div key={service.id} variants={fadeIn}>
-              <Card hoverEffect className="h-full flex flex-col group cursor-pointer bg-white border-0 shadow-sm hover:shadow-xl transition-shadow">
-                <div className="relative h-64 w-full overflow-hidden rounded-t-2xl">
-                  <Image
-                    src={service.image}
-                    alt={service.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-                </div>
-                <CardContent className="flex-grow p-8">
-                  <div className="mb-3 px-3 py-1 bg-[#2d5016]/10 text-[#2d5016] text-xs font-bold uppercase tracking-wider inline-block rounded-full">
-                    {service.category}
-                  </div>
-                  <h3 className="text-2xl font-serif font-bold mb-3 text-[#1f2937] group-hover:text-[#2d5016] transition-colors">
-                    {service.name}
-                  </h3>
-                  <p className="text-[#6b7280] line-clamp-2 leading-relaxed">
-                    {service.description}
-                  </p>
-                </CardContent>
-                <CardFooter className="p-8 pt-0 flex justify-between items-center mt-auto bg-white">
-                  <div className="flex items-center text-sm font-medium text-[#6b7280]">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {service.duration}
-                  </div>
-                  <Link href={`/services/${service.id}`} className="inline-flex items-center text-[#2d5016] font-semibold hover:underline">
-                    Learn More <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </CardFooter>
-              </Card>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid md:grid-cols-3 gap-8"
+            >
+              {services.slice(0, 3).map((service) => (
+                <motion.div key={service.id} variants={fadeIn}>
+                  <Card hoverEffect className="h-full flex flex-col group cursor-pointer bg-white border-0 shadow-sm hover:shadow-xl transition-shadow">
+                    <div className="relative h-64 w-full overflow-hidden rounded-t-2xl">
+                      <Image
+                        src={service.image}
+                        alt={service.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                    </div>
+                    <CardContent className="flex-grow p-8">
+                      <div className="mb-3 px-3 py-1 bg-[#2d5016]/10 text-[#2d5016] text-xs font-bold uppercase tracking-wider inline-block rounded-full">
+                        {service.category}
+                      </div>
+                      <h3 className="text-2xl font-serif font-bold mb-3 text-[#1f2937] group-hover:text-[#2d5016] transition-colors">
+                        {service.name}
+                      </h3>
+                      <p className="text-[#6b7280] line-clamp-2 leading-relaxed">
+                        {service.description}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="p-8 pt-0 flex justify-between items-center mt-auto bg-white">
+                      <div className="flex items-center text-sm font-medium text-[#6b7280]">
+                        <Clock className="w-4 h-4 mr-2" />
+                        {service.duration}
+                      </div>
+                      <Link href={`/services/${service.id}`} className="inline-flex items-center text-[#2d5016] font-semibold hover:underline">
+                        Learn More <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
 
-        <div className="text-center mt-16">
-          <Button variant="outline" size="lg" className="rounded-full h-12 px-8 border-2 border-[#e5e7eb] text-[#1f2937] hover:bg-gray-50" asChild>
-            <Link href="/services">View Full Menu</Link>
-          </Button>
-        </div>
-      </div>
+            <div className="text-center mt-16">
+              <Button variant="outline" size="lg" className="rounded-full h-12 px-8 border-2 border-[#e5e7eb] text-[#1f2937] hover:bg-gray-50" asChild>
+                <Link href="/services">View Full Menu</Link>
+              </Button>
+            </div>
+          </div>
         </section >
 
-    {/* TESTIMONIALS */ }
-    < section className = "py-24 bg-[#f2e9e4]/40" >
-      <div className="container mx-auto px-6 md:px-12 lg:px-24">
-        <h2 className="text-4xl font-serif font-bold text-center mb-16 text-[#1f2937]">
-          Healing Stories
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t) => (
-            <Card key={t.id} className="bg-white border-none p-8 relative overflow-visible shadow-md">
-              <div className="absolute -top-6 left-8 bg-[#e07a5f] text-white p-3 rounded-xl shadow-lg">
-                <Star className="w-6 h-6 fill-current" />
-              </div>
-              <div className="mt-6 mb-6">
-                <p className="text-lg text-[#1f2937] italic font-serif leading-relaxed">"{t.quote}"</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden relative border border-gray-200">
-                  {/* Placeholder avatar if no image */}
-                  <div className="absolute inset-0 bg-[#2d5016]/10 flex items-center justify-center font-bold text-[#2d5016]">
-                    {t.name[0]}
+        {/* TESTIMONIALS */}
+        < section className="py-24 bg-[#f2e9e4]/40" >
+          <div className="container mx-auto px-6 md:px-12 lg:px-24">
+            <h2 className="text-4xl font-serif font-bold text-center mb-16 text-[#1f2937]">
+              Healing Stories
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {testimonials.map((t) => (
+                <Card key={t.id} className="bg-white border-none p-8 relative overflow-visible shadow-md">
+                  <div className="absolute -top-6 left-8 bg-[#e07a5f] text-white p-3 rounded-xl shadow-lg">
+                    <Star className="w-6 h-6 fill-current" />
                   </div>
-                </div>
-                <div>
-                  <div className="font-bold text-[#1f2937]">{t.name}</div>
-                  <div className="text-sm text-[#6b7280]">{t.role}</div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+                  <div className="mt-6 mb-6">
+                    <p className="text-lg text-[#1f2937] italic font-serif leading-relaxed">"{t.quote}"</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden relative border border-gray-200">
+                      {/* Placeholder avatar if no image */}
+                      <div className="absolute inset-0 bg-[#2d5016]/10 flex items-center justify-center font-bold text-[#2d5016]">
+                        {t.name[0]}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#1f2937]">{t.name}</div>
+                      <div className="text-sm text-[#6b7280]">{t.role}</div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
         </section >
 
-    {/* CTA */ }
-    < section className = "py-24 relative overflow-hidden bg-[#9caf88] text-white" >
-      <div className="container relative z-10 px-6 md:px-12 lg:px-24 text-center">
-        <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Begin Your Wellness Journey</h2>
-        <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto text-white/90">
-          Ready to restore your natural balance? Schedule your consultation with Dr. Priyanka today.
-        </p>
-        <Button size="lg" variant="default" className="bg-white text-[#2d5016] hover:bg-white/90 h-16 px-10 text-lg rounded-full font-bold shadow-lg mt-4" asChild>
-          <Link href="/book">Booking Available Now</Link>
-        </Button>
-      </div>
+        {/* CTA */}
+        < section className="py-24 relative overflow-hidden bg-[#9caf88] text-white" >
+          <div className="container relative z-10 px-6 md:px-12 lg:px-24 text-center">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">Begin Your Wellness Journey</h2>
+            <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto text-white/90">
+              Ready to restore your natural balance? Schedule your consultation with Dr. Priyanka today.
+            </p>
+            <Button size="lg" variant="default" className="bg-white text-[#2d5016] hover:bg-white/90 h-16 px-10 text-lg rounded-full font-bold shadow-lg mt-4" asChild>
+              <Link href="/book">Booking Available Now</Link>
+            </Button>
+          </div>
         </section >
 
       </main >
-    <Footer />
+      <Footer />
     </div >
   );
 }

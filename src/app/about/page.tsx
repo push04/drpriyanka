@@ -22,13 +22,13 @@ export default function AboutPage() {
                         </div>
                         <div className="space-y-6">
                             <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary">Dr. Priyanka</h1>
-                            <h2 className="text-2xl text-muted-foreground">Chief Naturopath & Founder</h2>
+                            <h2 className="text-2xl text-muted-foreground">Naturopathy & Herbal Medicine</h2>
                             <div className="prose prose-lg text-muted-foreground">
                                 <p>
-                                    With over 10 years of experience in holistic medicine, Dr. Priyanka has dedicated her life to healing patients through the power of nature. She believes that the body has an innate ability to heal itself when provided with the right environment and nutrition.
+                                    At <strong>Dr. Priyanka Clinic & Institute</strong>, we provide alternative, safe, and effective treatments through the natural way. Dr. Priyanka specializes in treating chronic ailments by combining the ancient wisdom of Naturopathy with herbal medicine.
                                 </p>
                                 <p>
-                                    Her approach combines traditional wisdom of Ayurveda and Naturopathy with modern scientific understanding to treat the root cause of ailments rather than just symptoms.
+                                    Our goal is to restore health naturally, boosting immunity and revitalizing the body without harmful side effects.
                                 </p>
                             </div>
 
@@ -42,6 +42,26 @@ export default function AboutPage() {
                                     <div className="text-sm">Nutrition & Dietetics</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* TREATMENTS LIST */}
+                <section className="py-16 bg-[#faf9f6]">
+                    <div className="container mx-auto px-4 md:px-6 text-center">
+                        <h2 className="text-3xl font-serif font-bold text-[#2d5016] mb-8">Treatments Available</h2>
+                        <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+                            {[
+                                "Chronic Cold (Sinus)", "Asthma", "Chronic Cough", "Cervical Spondylitis",
+                                "Back Pain", "Knee Pain", "Frozen Shoulder", "Skin Diseases",
+                                "Increased Immunity", "Acidity", "Constipation", "Weight Loss",
+                                "Facial Rejuvenation", "PCOD", "Diabetes", "Hypertension",
+                                "Menstrual Disorder", "Thyroid", "Anxiety", "Stress", "Headache"
+                            ].map((item, idx) => (
+                                <span key={idx} className="bg-white border border-[#2d5016]/20 text-[#2d5016] px-4 py-2 rounded-full text-sm font-medium shadow-sm">
+                                    {item}
+                                </span>
+                            ))}
                         </div>
                     </div>
                 </section>
