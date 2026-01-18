@@ -83,8 +83,8 @@ function ServicesContent() {
                         >
                             {filteredServices.map((service) => (
                                 <motion.div key={service.id} variants={fadeIn}>
-                                    <Card hoverEffect className="h-full flex flex-col overflow-hidden border-none shadow-md group">
-                                        <div className="relative h-64 w-full overflow-hidden">
+                                    <Card hoverEffect className="h-full flex flex-col overflow-hidden border-none shadow-md group cursor-pointer transition-all hover:shadow-xl">
+                                        <Link href={`/services/${service.id}`} className="block h-64 w-full relative overflow-hidden">
                                             <Image
                                                 src={service.image}
                                                 alt={service.name}
@@ -92,13 +92,15 @@ function ServicesContent() {
                                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                                        </div>
+                                        </Link>
                                         <CardContent className="flex-grow p-6">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="text-xs font-semibold text-accent uppercase tracking-wider">{service.category}</div>
                                                 <div className="text-lg font-bold text-primary">₹{service.price}</div>
                                             </div>
-                                            <h3 className="text-2xl font-serif font-bold mb-3 group-hover:text-primary transition-colors">{service.name}</h3>
+                                            <Link href={`/services/${service.id}`} className="group-hover:text-primary transition-colors">
+                                                <h3 className="text-2xl font-serif font-bold mb-3">{service.name}</h3>
+                                            </Link>
                                             <p className="text-muted-foreground text-sm line-clamp-3 mb-4">{service.description}</p>
 
                                             {/* Tags Display */}
