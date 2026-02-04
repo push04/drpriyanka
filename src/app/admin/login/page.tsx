@@ -46,6 +46,8 @@ export default function AdminLoginPage() {
                 localStorage.setItem("admin_session", "true");
                 localStorage.setItem("admin_name", data.session.user.name);
 
+                // Force refresh to ensure session is recognized by server components
+                router.refresh();
                 router.push("/admin");
             }
         } catch (err: any) {
