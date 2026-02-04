@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Upload } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+interface Category {
+    id: string;
+    name: string;
+    description?: string;
+}
 
 export default function NewServicePage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [isAddingCategory, setIsAddingCategory] = useState(false);
+    const [showCategoryDialog, setShowCategoryDialog] = useState(false);
 
     // Form State
     const [name, setName] = useState("");
@@ -27,6 +38,46 @@ export default function NewServicePage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Fetch categories
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('/api/admin/categories');
+                const data = await response.json();
+                if (data.categories) {
+                    setCategories(data.categories);
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim()) return;
+
+        setIsAddingCategory(true);
+        try {
+            const response = await fetch('/api/admin/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newCategoryName.trim() })
+            });
+
+            const data = await response.json();
+            if (data.category) {
+                setCategories([...categories, data.category]);
+                setCategory(data.category.name);
+                setNewCategoryName("");
+                setShowCategoryDialog(false);
+            }
+        } catch (error) {
+            console.error("Error adding category:", error);
+        }
+        setIsAddingCategory(false);
+    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -61,21 +112,26 @@ export default function NewServicePage() {
                 setIsUploading(false);
             }
 
-            // Insert Service Data
-            const { error: insertError } = await supabase
-                .from('services')
-                .insert({
+            // Insert Service Data via API
+            const response = await fetch('/api/admin/services', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     name,
                     category,
                     description,
                     price: parseFloat(price),
-                    duration: `${duration} min`, // Standardizing format
+                    duration: `${duration} min`,
                     status,
                     image: imageUrl,
-                    tags: [] // Default empty tags for now
-                });
+                    tags: []
+                })
+            });
 
-            if (insertError) throw insertError;
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to create service');
+            }
 
             router.push("/admin/services");
             router.refresh();
@@ -122,20 +178,59 @@ export default function NewServicePage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Category</Label>
-                                <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="naturopathy">Naturopathy</SelectItem>
-                                        <SelectItem value="yoga">Yoga Therapy</SelectItem>
-                                        <SelectItem value="consultation">Consultation</SelectItem>
-                                        <SelectItem value="ayurveda">Ayurveda</SelectItem>
-                                        <SelectItem value="hydrotherapy">Hydrotherapy</SelectItem>
-                                        <SelectItem value="massage">Massage</SelectItem>
-                                        <SelectItem value="diet">Diet & Nutrition</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex gap-2">
+                                    <Select value={category} onValueChange={setCategory}>
+                                        <SelectTrigger className="flex-1">
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.name}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                                        <DialogTrigger asChild>
+                                            <Button type="button" variant="outline" size="icon">
+                                                <Plus className="w-4 h-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Add New Category</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4 pt-4">
+                                                <Input
+                                                    placeholder="Category name"
+                                                    value={newCategoryName}
+                                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                                />
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() => setShowCategoryDialog(false)}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleAddCategory}
+                                                        disabled={isAddingCategory || !newCategoryName.trim()}
+                                                    >
+                                                        {isAddingCategory ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            "Add Category"
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             </div>
                         </div>
 

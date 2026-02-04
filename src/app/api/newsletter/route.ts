@@ -23,8 +23,7 @@ export async function POST(req: Request) {
         const { data, error } = await supabaseAdmin
             .from('newsletter_subscribers')
             .insert({
-                email,
-                status: 'active'
+                email
             })
             .select()
             .single();

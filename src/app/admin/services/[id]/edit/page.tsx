@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Upload, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+interface Category {
+    id: string;
+    name: string;
+}
 
 export default function EditServicePage() {
     const router = useRouter();
@@ -19,6 +25,10 @@ export default function EditServicePage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [isAddingCategory, setIsAddingCategory] = useState(false);
+    const [showCategoryDialog, setShowCategoryDialog] = useState(false);
 
     // Form State
     const [name, setName] = useState("");
@@ -33,21 +43,29 @@ export default function EditServicePage() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Fetch existing service data
+    // Fetch existing service data and categories
     useEffect(() => {
-        const fetchService = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch('/api/admin/services');
-                const data = await response.json();
+                const [servicesRes, categoriesRes] = await Promise.all([
+                    fetch('/api/admin/services'),
+                    fetch('/api/admin/categories')
+                ]);
 
-                if (data.services) {
-                    const service = data.services.find((s: any) => s.id === serviceId);
+                const servicesData = await servicesRes.json();
+                const categoriesData = await categoriesRes.json();
+
+                if (categoriesData.categories) {
+                    setCategories(categoriesData.categories);
+                }
+
+                if (servicesData.services) {
+                    const service = servicesData.services.find((s: any) => s.id === serviceId);
                     if (service) {
                         setName(service.name || "");
                         setCategory(service.category || "");
                         setDescription(service.description || "");
                         setPrice(service.price?.toString() || "");
-                        // Extract numeric duration from string like "60 min"
                         const durationMatch = service.duration?.match(/(\d+)/);
                         setDuration(durationMatch ? durationMatch[1] : "");
                         setStatus(service.status || "active");
@@ -55,12 +73,36 @@ export default function EditServicePage() {
                     }
                 }
             } catch (error) {
-                console.error("Error fetching service:", error);
+                console.error("Error fetching data:", error);
             }
             setIsLoading(false);
         };
-        fetchService();
+        fetchData();
     }, [serviceId]);
+
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim()) return;
+
+        setIsAddingCategory(true);
+        try {
+            const response = await fetch('/api/admin/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newCategoryName.trim() })
+            });
+
+            const data = await response.json();
+            if (data.category) {
+                setCategories([...categories, data.category]);
+                setCategory(data.category.name);
+                setNewCategoryName("");
+                setShowCategoryDialog(false);
+            }
+        } catch (error) {
+            console.error("Error adding category:", error);
+        }
+        setIsAddingCategory(false);
+    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -75,7 +117,6 @@ export default function EditServicePage() {
         setIsSaving(true);
 
         try {
-            // Upload new image if selected
             let imageUrl = currentImage;
             if (imageFile) {
                 setIsUploading(true);
@@ -94,7 +135,6 @@ export default function EditServicePage() {
                 setIsUploading(false);
             }
 
-            // Update service via API
             const response = await fetch('/api/admin/services', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -168,23 +208,51 @@ export default function EditServicePage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Category</Label>
-                                <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="naturopathy">Naturopathy</SelectItem>
-                                        <SelectItem value="yoga">Yoga Therapy</SelectItem>
-                                        <SelectItem value="consultation">Consultation</SelectItem>
-                                        <SelectItem value="ayurveda">Ayurveda</SelectItem>
-                                        <SelectItem value="hydrotherapy">Hydrotherapy</SelectItem>
-                                        <SelectItem value="massage">Massage</SelectItem>
-                                        <SelectItem value="diet">Diet & Nutrition</SelectItem>
-                                        <SelectItem value="Yoga & Meditation">Yoga & Meditation</SelectItem>
-                                        <SelectItem value="Therapy">Therapy</SelectItem>
-                                        <SelectItem value="Diet & Nutrition">Diet & Nutrition</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex gap-2">
+                                    <Select value={category} onValueChange={setCategory}>
+                                        <SelectTrigger className="flex-1">
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.name}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                                        <DialogTrigger asChild>
+                                            <Button type="button" variant="outline" size="icon">
+                                                <Plus className="w-4 h-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Add New Category</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4 pt-4">
+                                                <Input
+                                                    placeholder="Category name"
+                                                    value={newCategoryName}
+                                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                                />
+                                                <div className="flex justify-end gap-2">
+                                                    <Button type="button" variant="outline" onClick={() => setShowCategoryDialog(false)}>
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleAddCategory}
+                                                        disabled={isAddingCategory || !newCategoryName.trim()}
+                                                    >
+                                                        {isAddingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Category"}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             </div>
                         </div>
 
