@@ -10,7 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { testimonials } from "@/lib/data";
+// Testimonials now loaded from database
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -53,6 +53,7 @@ export default function Home() {
   const [index, setIndex] = useState(0);
   const [conditions, setConditions] = useState<any[]>(defaultConditions);
   const [featuredServices, setFeaturedServices] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,15 +62,19 @@ export default function Home() {
         const conditionsPromise = fetch('/api/admin/conditions').then(res => res.json());
 
         // Fetch services (active ones)
-        // We can use the admin API or supabase client directly. Since we are client side, maybe API is cleaner or direct client.
-        // Let's use the API we know exists or create a client. 
-        // Admin api `/api/admin/services` returns all services.
         const servicesPromise = fetch('/api/admin/services').then(res => res.json());
 
-        const [conditionsData, servicesData] = await Promise.all([conditionsPromise, servicesPromise]);
+        // Fetch testimonials
+        const testimonialsPromise = fetch('/api/testimonials').then(res => res.json());
+
+        const [conditionsData, servicesData, testimonialsData] = await Promise.all([conditionsPromise, servicesPromise, testimonialsPromise]);
 
         if (conditionsData.conditions && conditionsData.conditions.length > 0) {
           setConditions(conditionsData.conditions);
+        }
+
+        if (testimonialsData.testimonials && testimonialsData.testimonials.length > 0) {
+          setTestimonials(testimonialsData.testimonials);
         }
 
         if (servicesData.services) {

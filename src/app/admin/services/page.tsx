@@ -127,6 +127,16 @@ export default function ServicesPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        className="h-8 w-8"
+                                                        asChild
+                                                    >
+                                                        <Link href={`/admin/services/${service.id}/edit`}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         className="h-8 w-8 text-red-600 hover:bg-red-50"
                                                         onClick={() => handleDelete(service.id)}
                                                     >

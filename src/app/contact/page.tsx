@@ -1,26 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Loader2 } from "lucide-react";
+
+interface SiteSettings {
+    contact_phone_1?: string;
+    contact_phone_2?: string;
+    contact_email?: string;
+    contact_address?: string;
+    clinic_hours_morning?: string;
+    clinic_hours_evening?: string;
+}
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [settings, setSettings] = useState<SiteSettings>({});
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await fetch('/api/settings');
+                const data = await response.json();
+                if (data.settings) {
+                    setSettings(data.settings);
+                }
+            } catch (error) {
+                console.error("Error fetching settings:", error);
+            }
+            setIsLoading(false);
+        };
+        fetchSettings();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
+        // Simulate API call (TODO: Implement contact form API)
         await new Promise(resolve => setTimeout(resolve, 1500));
         setIsSubmitting(false);
         setIsSuccess(true);
     };
+
+    // Parse address for display
+    const address = settings.contact_address || "SF-209, Siddharth Magnum Plus, Next to Bansal Mall, Tarsali-390009";
+    const addressParts = address.split(',');
+    const addressLine1 = addressParts.slice(0, 2).join(',');
+    const addressLine2 = addressParts.slice(2).join(',');
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -38,34 +71,42 @@ export default function ContactPage() {
                         {/* Contact Info */}
                         <div className="space-y-8">
                             <h2 className="text-2xl font-serif font-bold">Get in Touch</h2>
-                            <div className="space-y-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-primary/10 p-3 rounded-full"><MapPin className="text-primary" /></div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Visit Us</h3>
-                                        <p className="text-muted-foreground">SF-209, Siddharth Magnum Plus,<br />Next to Bansal Mall, Tarsali-390009</p>
-                                    </div>
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                                 </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-primary/10 p-3 rounded-full"><Phone className="text-primary" /></div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Call Us</h3>
-                                        <p className="text-muted-foreground">+91 95862 39293</p>
-                                        <p className="text-muted-foreground">+91 88664 55269</p>
-                                        <div className="mt-2 text-sm text-muted-foreground bg-gray-50 p-2 rounded-md border border-gray-100">
-                                            <p><span className="font-semibold text-[#2d5016]">Morning:</span> 11:00 AM - 01:00 PM</p>
-                                            <p><span className="font-semibold text-[#2d5016]">Evening:</span> 06:00 PM - 08:00 PM</p>
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-full"><MapPin className="text-primary" /></div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Visit Us</h3>
+                                            <p className="text-muted-foreground">{addressLine1}<br />{addressLine2}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-full"><Phone className="text-primary" /></div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Call Us</h3>
+                                            <p className="text-muted-foreground">{settings.contact_phone_1 || "+91 95862 39293"}</p>
+                                            {settings.contact_phone_2 && (
+                                                <p className="text-muted-foreground">{settings.contact_phone_2}</p>
+                                            )}
+                                            <div className="mt-2 text-sm text-muted-foreground bg-gray-50 p-2 rounded-md border border-gray-100">
+                                                <p><span className="font-semibold text-[#2d5016]">Morning:</span> {settings.clinic_hours_morning || "11:00 AM - 01:00 PM"}</p>
+                                                <p><span className="font-semibold text-[#2d5016]">Evening:</span> {settings.clinic_hours_evening || "06:00 PM - 08:00 PM"}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="bg-primary/10 p-3 rounded-full"><Mail className="text-primary" /></div>
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Email Us</h3>
+                                            <p className="text-muted-foreground">{settings.contact_email || "clinic@drpriyanka.com"}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-primary/10 p-3 rounded-full"><Mail className="text-primary" /></div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Email Us</h3>
-                                        <p className="text-muted-foreground">clinic@drpriyanka.com</p>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Form */}
