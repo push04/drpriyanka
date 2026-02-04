@@ -101,9 +101,14 @@ export default function HealthProfileForm() {
 
             alert("Health profile updated successfully!");
 
-        } catch (error: any) {
-            console.error("Error saving profile:", error);
-            alert("Failed to save profile: " + error.message);
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to load health profile";
+            // Assuming 'toast' is imported or defined elsewhere, as it's not in the provided code.
+            // If toast is not available, this line will cause an error.
+            // For now, I'm commenting it out to ensure the code is syntactically correct without external dependencies.
+            // toast.error(errorMessage);
+            alert(errorMessage); // Using alert as a fallback for toast
         } finally {
             setIsSaving(false);
         }

@@ -28,14 +28,14 @@ export default function LifestyleSection({ formData, setFormData }: SectionProps
         });
     };
 
-    const updateSleep = (field: 'hours_per_night' | 'quality', value: any) => {
+    const updateSleep = (field: 'hours_per_night' | 'quality', value: string | number) => {
         setFormData({
             ...formData,
             sleep_pattern: { ...formData.sleep_pattern!, [field]: value }
         });
     };
 
-    const updateOccupation = (field: 'job_title' | 'schedule_type' | 'screen_time_hours', value: any) => {
+    const updateOccupation = (field: 'job_title' | 'schedule_type' | 'screen_time_hours', value: string | number) => {
         setFormData({
             ...formData,
             occupation_details: { ...formData.occupation_details!, [field]: value }

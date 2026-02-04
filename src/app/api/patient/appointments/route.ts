@@ -117,9 +117,10 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ appointments: formattedAppointments });
 
-    } catch (error: any) {
-        console.error('Patient appointments API error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } catch (error) {
+        console.error('Error creating appointment:', error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
     }
 }
 

@@ -31,6 +31,12 @@ export default function LoginPage() {
             if (error) throw error;
 
             if (data.session) {
+                // Check if email is confirmed
+                if (!data.session.user.email_confirmed_at) {
+                    router.push("/auth/confirm-email");
+                    return;
+                }
+
                 // Check role to redirect appropriately
                 const { data: profile } = await supabase
                     .from('profiles')
@@ -44,8 +50,8 @@ export default function LoginPage() {
                     router.push("/patient-dashboard");
                 }
             }
-        } catch (err: any) {
-            setError(err.message || "Invalid login credentials");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Invalid login credentials");
         } finally {
             setIsLoading(false);
         }
@@ -79,9 +85,6 @@ export default function LoginPage() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
-                                <Link href="#" className="text-xs text-muted-foreground hover:text-[#2d5016]">
-                                    Forgot password?
-                                </Link>
                             </div>
                             <Input
                                 id="password"

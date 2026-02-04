@@ -12,7 +12,7 @@ import { format } from "date-fns";
 
 export default function PatientDashboard() {
     const { user, isLoading: authLoading } = useAuth();
-    const [appointments, setAppointments] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<{ id: string; service_name?: string; start_time: string; duration?: string; status: string }[]>([]);
     const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,7 @@ export default function PatientDashboard() {
                     // Filter for upcoming appointments only and limit to 2
                     const now = new Date();
                     const upcomingApts = data.appointments
-                        .filter((apt: any) => new Date(apt.start_time) >= now && apt.status !== 'cancelled')
+                        .filter((apt: { start_time: string; status: string }) => new Date(apt.start_time) >= now && apt.status !== 'cancelled')
                         .slice(0, 2);
                     setAppointments(upcomingApts);
                 } else {

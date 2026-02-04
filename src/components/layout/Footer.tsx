@@ -40,9 +40,10 @@ export function Footer() {
             setStatus("success");
             setMessage("Thank you for subscribing!");
             setEmail("");
-        } catch (error: any) {
+        } catch (error) {
             setStatus("error");
-            setMessage(error.message || "Something went wrong. Please try again.");
+            const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+            setMessage(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -66,17 +67,7 @@ export function Footer() {
                         <p className="text-white/80 text-sm leading-relaxed">
                             Restoring health naturally through the ancient wisdom of Nature Cure and modern holistic practices.
                         </p>
-                        <div className="flex gap-4">
-                            <a href="#" className="text-white/70 hover:text-white transition-colors">
-                                <Facebook className="w-5 h-5" />
-                            </a>
-                            <a href="#" className="text-white/70 hover:text-white transition-colors">
-                                <Instagram className="w-5 h-5" />
-                            </a>
-                            <a href="#" className="text-white/70 hover:text-white transition-colors">
-                                <Youtube className="w-5 h-5" />
-                            </a>
-                        </div>
+                        {/* Social links removed until real accounts are connected */}
                     </div>
 
                     {/* Quick Links */}

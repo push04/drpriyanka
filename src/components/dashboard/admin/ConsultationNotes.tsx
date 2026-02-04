@@ -55,9 +55,10 @@ export function ConsultationNotes({ patientId, practitionerId }: ConsultationNot
             setSoap({ subjective: "", objective: "", assessment: "", plan: "", private_notes: "" }); // Reset
             // Ideally trigger refresh or callback here
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error saving notes:", error);
-            alert("Failed to save note: " + error.message);
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            alert("Failed to save note: " + errorMessage);
         } finally {
             setLoading(false);
         }

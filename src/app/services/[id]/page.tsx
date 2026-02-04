@@ -6,15 +6,31 @@ import { ArrowLeft, Clock, CheckCircle } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { services } from "@/lib/data";
+import { createClient } from '@supabase/supabase-js';
+
+// We need a server-side client or just use the public URL/Anon key directly for public data
+// Since this is a server component, we can create a quick client instance
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const service = services.find(s => s.id === id);
 
-    if (!service) {
-        // In a real app we would use notFound(), but for static export/mock we might fallback carefully
-        return <div>Service not found</div>;
+    const { data: service, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error || !service) {
+        return <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold mb-4">Service Not Found</h1>
+                <Link href="/services" className="text-primary hover:underline">Back to Services</Link>
+            </div>
+        </div>;
     }
 
     return (

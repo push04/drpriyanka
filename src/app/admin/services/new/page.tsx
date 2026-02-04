@@ -16,6 +16,14 @@ export default function NewServicePage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
+    // Form State
+    const [name, setName] = useState("");
+    const [category, setCategory] = useState("");
+    const [description, setDescription] = useState("");
+    const [price, setPrice] = useState("");
+    const [duration, setDuration] = useState("");
+    const [status, setStatus] = useState("active");
+
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -32,38 +40,53 @@ export default function NewServicePage() {
         e.preventDefault();
         setIsLoading(true);
 
-        // Upload Image if exists
-        let imageUrl = null;
-        if (imageFile) {
-            setIsUploading(true);
-            const fileName = `${Date.now()}-${imageFile.name}`;
-            const { data, error } = await supabase.storage
-                .from('clinic-assets')
-                .upload(fileName, imageFile);
+        try {
+            // Upload Image if exists
+            let imageUrl = null;
+            if (imageFile) {
+                setIsUploading(true);
+                const fileName = `${Date.now()}-${imageFile.name}`;
+                const { data, error } = await supabase.storage
+                    .from('clinic-assets')
+                    .upload(fileName, imageFile);
 
-            if (error) {
-                console.error("Upload error:", error);
-                alert("Failed to upload image");
-                setIsLoading(false);
+                if (error) throw error;
+
+                // Get Public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from('clinic-assets')
+                    .getPublicUrl(fileName);
+
+                imageUrl = publicUrl;
                 setIsUploading(false);
-                return;
             }
 
-            // Get Public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('clinic-assets')
-                .getPublicUrl(fileName);
+            // Insert Service Data
+            const { error: insertError } = await supabase
+                .from('services')
+                .insert({
+                    name,
+                    category,
+                    description,
+                    price: parseFloat(price),
+                    duration: `${duration} min`, // Standardizing format
+                    status,
+                    image: imageUrl,
+                    tags: [] // Default empty tags for now
+                });
 
-            imageUrl = publicUrl;
+            if (insertError) throw insertError;
+
+            router.push("/admin/services");
+            router.refresh();
+
+        } catch (error: any) {
+            console.error("Error creating service:", error);
+            alert(error.message || "Failed to create service");
+        } finally {
+            setIsLoading(false);
             setIsUploading(false);
         }
-
-        // Save Service Data (Mock or Real Insert)
-        console.log("Saving service with image:", imageUrl);
-
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        router.push("/admin/services");
     };
 
     return (
@@ -90,11 +113,16 @@ export default function NewServicePage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label>Service Name</Label>
-                                <Input placeholder="e.g. Traditional Massage" required />
+                                <Input
+                                    placeholder="e.g. Traditional Massage"
+                                    required
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Category</Label>
-                                <Select>
+                                <Select value={category} onValueChange={setCategory}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select category" />
                                     </SelectTrigger>
@@ -103,6 +131,9 @@ export default function NewServicePage() {
                                         <SelectItem value="yoga">Yoga Therapy</SelectItem>
                                         <SelectItem value="consultation">Consultation</SelectItem>
                                         <SelectItem value="ayurveda">Ayurveda</SelectItem>
+                                        <SelectItem value="hydrotherapy">Hydrotherapy</SelectItem>
+                                        <SelectItem value="massage">Massage</SelectItem>
+                                        <SelectItem value="diet">Diet & Nutrition</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -113,21 +144,35 @@ export default function NewServicePage() {
                             <Textarea
                                 placeholder="Describe the benefits and process of this therapy..."
                                 className="min-h-[120px]"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                             />
                         </div>
 
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label>Price (₹)</Label>
-                                <Input type="number" placeholder="1500" required />
+                                <Input
+                                    type="number"
+                                    placeholder="1500"
+                                    required
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value)}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Duration (Minutes)</Label>
-                                <Input type="number" placeholder="60" required />
+                                <Input
+                                    type="number"
+                                    placeholder="60"
+                                    required
+                                    value={duration}
+                                    onChange={(e) => setDuration(e.target.value)}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
-                                <Select defaultValue="active">
+                                <Select value={status} onValueChange={setStatus}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>

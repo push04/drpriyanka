@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ profile });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Health profile API error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

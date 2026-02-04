@@ -32,8 +32,9 @@ export async function GET() {
 
         return NextResponse.json({ patients });
 
-    } catch (error: any) {
-        console.error('Patients API error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    } catch (error) {
+        console.error('API Error:', error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: 'Failed to fetch patients', details: errorMessage }, { status: 500 });
     }
 }

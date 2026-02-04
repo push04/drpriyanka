@@ -261,8 +261,9 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ role: "assistant", content: aiContent });
 
-    } catch (error: any) {
-        console.error("❌ General AI Route Error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    } catch (error) {
+        console.error('Chat API Error:', error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
     }
 }

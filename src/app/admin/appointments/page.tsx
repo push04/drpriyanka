@@ -8,12 +8,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+interface Appointment {
+    id: string;
+    patient: string;
+    patient_id?: string;
+    service: string;
+    date: string;
+    time: string;
+    status: string;
+    phone?: string;
+    duration?: string;
+}
+
+interface Medication {
+    name: string;
+    dosage: string;
+}
+
+interface Allergen {
+    allergen: string;
+}
+
+interface PatientHistory {
+    chief_complaint?: { complaint: string };
+    current_medications?: { medications: Medication[] };
+    allergies?: { drug: Allergen[] };
+    past_history?: any;
+}
+
 export default function AppointmentsPage() {
-    const [appointments, setAppointments] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-    const [patientHistory, setPatientHistory] = useState<any>(null);
+    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [patientHistory, setPatientHistory] = useState<PatientHistory | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
 
     useEffect(() => {
@@ -65,7 +93,7 @@ export default function AppointmentsPage() {
         }
     };
 
-    const handleViewDetails = (apt: any) => {
+    const handleViewDetails = (apt: Appointment) => {
         setSelectedAppointment(apt);
         if (apt.patient_id) {
             fetchPatientHistory(apt.patient_id);
@@ -77,7 +105,7 @@ export default function AppointmentsPage() {
     const updateStatus = async (id: string, newStatus: string) => {
         setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
         if (selectedAppointment?.id === id) {
-            setSelectedAppointment((prev: any) => ({ ...prev, status: newStatus }));
+            setSelectedAppointment((prev: Appointment | null) => prev ? ({ ...prev, status: newStatus }) : null);
         }
 
         try {
@@ -324,20 +352,20 @@ export default function AppointmentsPage() {
                                                     <p>{patientHistory.chief_complaint.complaint}</p>
                                                 </div>
                                             )}
-                                            {patientHistory.current_medications?.medications?.length > 0 && (
+                                            {patientHistory.current_medications?.medications && patientHistory.current_medications.medications.length > 0 && (
                                                 <div>
                                                     <span className="font-semibold block text-xs uppercase text-muted-foreground mb-1">Current Medications</span>
                                                     <div className="flex flex-wrap gap-2">
-                                                        {patientHistory.current_medications.medications.map((m: any, i: number) => (
+                                                        {patientHistory.current_medications?.medications?.map((m: Medication, i: number) => (
                                                             <span key={i} className="bg-white px-2 py-1 rounded border shadow-sm">{m.name} ({m.dosage})</span>
                                                         ))}
                                                     </div>
                                                 </div>
                                             )}
-                                            {patientHistory.allergies?.drug?.length > 0 && (
+                                            {patientHistory.allergies?.drug && patientHistory.allergies.drug.length > 0 && (
                                                 <div>
                                                     <span className="font-semibold block text-xs uppercase text-muted-foreground mb-1 text-red-600">Allergies</span>
-                                                    <p className="text-red-700">{patientHistory.allergies.drug.map((a: any) => a.allergen).join(", ")}</p>
+                                                    <p className="text-red-700">{patientHistory.allergies?.drug?.map((a: Allergen) => a.allergen).join(", ")}</p>
                                                 </div>
                                             )}
                                             {!patientHistory.chief_complaint && !patientHistory.current_medications && (

@@ -13,7 +13,8 @@ import {
     Stethoscope,
     Receipt,
     Activity,
-    Tag
+    Tag,
+    Mail
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const sidebarLinks = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Appointments", href: "/admin/appointments", icon: Calendar },
     { name: "Patients", href: "/admin/patients", icon: Users },
+    { name: "Marketing", href: "/admin/marketing", icon: Mail },
     { name: "Conditions", href: "/admin/conditions", icon: Tag },
     { name: "Vitals Review", href: "/admin/vitals", icon: Activity },
     { name: "Services", href: "/admin/services", icon: Stethoscope },

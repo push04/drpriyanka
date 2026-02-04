@@ -12,7 +12,7 @@ interface SectionProps {
 }
 
 export default function WomensHealthSection({ formData, setFormData }: SectionProps) {
-    const updateMenstrual = (field: string, value: any) => {
+    const updateMenstrual = (field: string, value: string | boolean | number) => {
         setFormData({
             ...formData,
             menstrual_history: { ...formData.menstrual_history!, [field]: value }

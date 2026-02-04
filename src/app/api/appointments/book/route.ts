@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         const recurringGroupId = numSessions > 1 ? uuidv4() : null;
 
         const appointmentsToInsert = [];
-        let currentDate = new Date(`${date}T${time}:00`);
+        const currentDate = new Date(`${date}T${time}:00`);
 
         // Check if user exists to link profile
         let patientId = null;
