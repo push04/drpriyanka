@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Allow "admin" username shorthand
-        const loginEmail = email.toLowerCase() === 'admin' ? 'admin@drpriyanka.com' : email;
+        const cleanEmail = email.trim().toLowerCase();
+        const loginEmail = cleanEmail === 'admin' ? 'admin@drpriyanka.com' : cleanEmail;
+
+        console.log("Admin Login Attempt:", { email: cleanEmail, loginEmail });
 
         // 1. Authenticate user
         const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
@@ -25,41 +28,67 @@ export async function POST(req: NextRequest) {
         });
 
         if (authError) {
+            console.error("Auth failed:", authError.message);
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
 
         if (!authData.session) {
+            console.error("No session returned");
             return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
         }
+
+        const userId = authData.session.user.id;
+        const userEmail = authData.session.user.email;
+        console.log("Auth Success:", { userId, userEmail });
 
         // 2. Check admin role using service role (bypasses RLS)
         const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('role, full_name')
-            .eq('id', authData.session.user.id)
+            .eq('id', userId)
             .single();
 
-        if (profileError) {
-            console.error('Profile fetch error:', profileError);
-            // If profile doesn't exist, check if this is the admin email
-            if (loginEmail === 'admin@drpriyanka.com') {
+        if (profileError || !profile) {
+            console.warn('Profile fetch error or missing:', profileError);
+
+            // Should match what we just authenticated with
+            const validAdminEmails = ['admin@drpriyanka.com', 'admin@dpnc.in'];
+            const emailToCheck = userEmail?.toLowerCase() || loginEmail;
+
+            console.log("Checking valid emails for profile creation:", { emailToCheck, valid: validAdminEmails.includes(emailToCheck), validList: validAdminEmails });
+
+            if (validAdminEmails.includes(emailToCheck)) {
+                console.log("Auto-creating admin profile...");
                 // Create admin profile if it doesn't exist
-                await supabaseAdmin.from('profiles').upsert({
-                    id: authData.session.user.id,
-                    email: loginEmail,
+                const { error: upsertError } = await supabaseAdmin.from('profiles').upsert({
+                    id: userId,
+                    email: emailToCheck,
                     full_name: 'Dr. Priyanka',
                     role: 'admin',
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 });
+
+                if (upsertError) console.error("Upsert failed:", upsertError);
             } else {
                 return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
             }
         }
 
         // 3. Verify admin role (check again if we just created it)
-        const role = profile?.role || 'admin'; // If we just created it, it's admin
-        if (loginEmail !== 'admin@drpriyanka.com' && role !== 'admin') {
+        // If we survived the block above, we either had a profile or just created one.
+
+        // Re-fetch profile to be sure? Or trust logic.
+        // Let's trust logic but stricter.
+
+        let isAdmin = false;
+        // Check if explicitly authorized email OR has admin role
+        if ((['admin@drpriyanka.com', 'admin@dpnc.in'].includes(userEmail?.toLowerCase() || '')) || profile?.role === 'admin') {
+            isAdmin = true;
+        }
+
+        if (!isAdmin) {
+            console.log("Role check failed:", { role: profile?.role, email: userEmail });
             return NextResponse.json({ error: 'Unauthorized: Access restricted to administrators' }, { status: 403 });
         }
 

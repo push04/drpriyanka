@@ -10,7 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { services, testimonials } from "@/lib/data";
+import { testimonials } from "@/lib/data";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -52,20 +52,39 @@ const defaultConditions = [
 export default function Home() {
   const [index, setIndex] = useState(0);
   const [conditions, setConditions] = useState<any[]>(defaultConditions);
+  const [featuredServices, setFeaturedServices] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchConditions = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/admin/conditions');
-        const data = await response.json();
-        if (response.ok && data.conditions && data.conditions.length > 0) {
-          setConditions(data.conditions);
+        // Fetch conditions
+        const conditionsPromise = fetch('/api/admin/conditions').then(res => res.json());
+
+        // Fetch services (active ones)
+        // We can use the admin API or supabase client directly. Since we are client side, maybe API is cleaner or direct client.
+        // Let's use the API we know exists or create a client. 
+        // Admin api `/api/admin/services` returns all services.
+        const servicesPromise = fetch('/api/admin/services').then(res => res.json());
+
+        const [conditionsData, servicesData] = await Promise.all([conditionsPromise, servicesPromise]);
+
+        if (conditionsData.conditions && conditionsData.conditions.length > 0) {
+          setConditions(conditionsData.conditions);
         }
+
+        if (servicesData.services) {
+          // Filter active and take first 3
+          const activeServices = servicesData.services
+            .filter((s: any) => s.status === 'active')
+            .slice(0, 3);
+          setFeaturedServices(activeServices);
+        }
+
       } catch (error) {
-        console.error("Failed to fetch dynamic conditions", error);
+        console.error("Failed to fetch data", error);
       }
     };
-    fetchConditions();
+    fetchData();
 
     // Rotating words interval
     const interval = setInterval(() => {
@@ -243,7 +262,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="grid md:grid-cols-3 gap-8"
             >
-              {services.slice(0, 3).map((service) => (
+              {featuredServices.length > 0 ? featuredServices.map((service) => (
                 <motion.div key={service.id} variants={fadeIn}>
                   <Card hoverEffect className="h-full flex flex-col group cursor-pointer bg-white border-0 shadow-sm hover:shadow-xl transition-shadow">
                     <div className="relative h-64 w-full overflow-hidden rounded-t-2xl">
@@ -277,7 +296,11 @@ export default function Home() {
                     </CardFooter>
                   </Card>
                 </motion.div>
-              ))}
+              )) : (
+                <div className="col-span-3 text-center py-12 text-muted-foreground">
+                  <p>Loading therapies...</p>
+                </div>
+              )}
             </motion.div>
 
             <div className="text-center mt-16">
@@ -336,6 +359,6 @@ export default function Home() {
 
       </main>
       <Footer />
-    </div>
+    </div >
   );
 }
